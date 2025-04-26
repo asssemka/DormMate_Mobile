@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
+import 'screens/apply_screen.dart';
+import 'screens/test_page.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 
@@ -9,6 +10,8 @@ void main() {
 }
 
 class DormMateApp extends StatelessWidget {
+  const DormMateApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
@@ -22,6 +25,8 @@ class DormMateApp extends StatelessWidget {
           routes: {
             '/': (context) => SplashScreen(),
             '/login': (context) => LoginScreen(),
+            '/apply': (context) => ApplyScreen(),
+            '/testpage': (context) => TestPage(),
           },
         );
       },
