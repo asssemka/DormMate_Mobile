@@ -30,7 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  google_fonts: ^6.1.0 
+  google_fonts: ^4.0.4
   font_awesome_flutter: ^10.7.0
   flutter_screenutil: any
   http: any
@@ -49,7 +49,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -68,6 +67,10 @@ flutter:
     - assets/student_research.png
     - assets/logo.png
     - assets/dorm_background.png
+    - assets/chatbot.png
+    - assets/avatar.png
+    - assets/audio/notification.mp3
+
     
 
 
