@@ -9,17 +9,18 @@ import 'screens/apply_screen.dart';
 import 'screens/test_page.dart';
 import 'screens/notifications_screen.dart';
 
+// --- Админские:
+import 'screens/admin/admin_main_screen.dart';
+
 void main() {
   runApp(DormMateApp());
 }
 
 class DormMateApp extends StatelessWidget {
-  const DormMateApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      designSize: Size(390, 844),
+      designSize: const Size(390, 844),
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
@@ -27,7 +28,7 @@ class DormMateApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           initialRoute: '/',
           routes: {
-           '/': (context) => SplashScreen(),
+            '/': (context) => SplashScreen(),
             '/home': (context) => HomePage(),
             '/login': (context) => const LoginScreen(),
             '/profile': (context) => ProfileScreen(),
@@ -39,7 +40,10 @@ class DormMateApp extends StatelessWidget {
                     Navigator.pushNamed(context, '/chat');
                   },
                 ),
-          }
+
+            // Новый маршрут
+            '/adminMain': (context) => const AdminMainScreen(),
+          },
         );
       },
     );
