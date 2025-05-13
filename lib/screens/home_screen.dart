@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/api.dart';
 import '../widgets/banner_carousel.dart';
 import '../widgets/useful_info_page.dart';
@@ -120,8 +121,7 @@ class _HomePageState extends State<HomePage> {
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_customize_outlined), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard_customize_outlined), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.notifications_none_outlined), label: ''),
           BottomNavigationBarItem(
@@ -140,46 +140,29 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Баннер-карусель с явной высотой
-          SizedBox(
-            height: 200,
-            child: BannerCarousel(),
-          ),
-
-          // Отступ между баннером и кнопкой
+          SizedBox(height: 200, child: BannerCarousel()),
           const SizedBox(height: 16),
-
-          // Кнопка «Полезное для студентов» в форме капсулы
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => UsefulInfoPage()),
+                  MaterialPageRoute(builder: (_) => UsefulInfoPage()),
                 );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 32, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 textStyle: GoogleFonts.montserrat(
                     fontSize: 16, fontWeight: FontWeight.w600),
               ),
-              child: const Text(
-                'Полезное для студентов',
-                textAlign: TextAlign.center,
-              ),
+              child: const Text('Полезное для студентов'),
             ),
           ),
-
-          // Отступ перед списком
           const SizedBox(height: 16),
-
-          // Список общежитий в Expanded
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -201,8 +184,7 @@ class _HomePageState extends State<HomePage> {
                   color: isEven ? Colors.grey[100] : Colors.white,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () => Navigator.pushNamed(
-                        context, '/dorm/${dorm['id']}'),
+                    onTap: () => Navigator.pushNamed(context, '/dorm/${dorm['id']}'),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Row(

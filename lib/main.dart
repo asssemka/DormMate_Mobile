@@ -35,10 +35,10 @@ class DormMateApp extends StatelessWidget {
             '/apply': (context) => ApplyScreen(),
             '/testpage': (context) => TestPage(),
             '/notification': (context) => NotificationsScreen(
-                  onOpenChat: () {
-                    Navigator.pushNamed(context, '/chat');
-                  },
-                ),
+              onOpenChat: () {
+                Navigator.pushNamed(context, '/chat');
+              },
+            ),
             '/adminMain': (context) => const AdminMainScreen(),
           },
           onGenerateRoute: (settings) {
