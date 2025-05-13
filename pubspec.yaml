@@ -40,6 +40,11 @@ dependencies:
   file_picker: ^6.1.1 
   audioplayers: ^6.4.0
   intl: ^0.18.1
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+  webview_flutter: ^4.4.1
+
+
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -70,6 +75,10 @@ flutter:
     - assets/chatbot.png
     - assets/avatar.png
     - assets/audio/notification.mp3
+    - assets/banner.png
+    - assets/banner2.png
+    - assets/banner3.png
+
 
     
 

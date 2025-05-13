@@ -1,9 +1,9 @@
-// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../services/api.dart';   // AuthService здесь
-// если файлы лежат в других папках -- поправь путь
+import '../services/api.dart';
+import '../widgets/banner_carousel.dart';
+import '../widgets/useful_info_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -13,242 +13,221 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // ------- HEADER ----------------------------------------------------------
-  PreferredSizeWidget _buildHeader() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      leading: Builder(
-        builder: (ctx) => IconButton(
-          icon: const Icon(Icons.menu, color: Colors.red, size: 30),
-          onPressed: () => Scaffold.of(ctx).openDrawer(),
-        ),
-      ),
-      title: Text(
-        'NARXOZ\nDorm Mate',
-        textAlign: TextAlign.center,
-        style: GoogleFonts.montserrat(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: Colors.red,
-        ),
-      ),
-      centerTitle: true,
-    );
+  List<Map<String, dynamic>> _dorms = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDorms();
   }
 
-  // ------- DRAWER (бургер‑меню) -------------------------------------------
-  Drawer _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: Colors.red),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.account_circle, color: Colors.white, size: 50),
-                  const SizedBox(height: 10),
-                  Text('Меню',
-                      style: GoogleFonts.montserrat(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white)),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Home'),
-              onTap: () => Navigator.pushReplacementNamed(context, '/home'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Profile'),
-              onTap: () => Navigator.pushReplacementNamed(context, '/profile'),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Log out'),
-              onTap: () async {
-                Navigator.pop(context);             // закрыть Drawer
-                await AuthService.logout();         // удалить токены
-                if (!mounted) return;
-                Navigator.pushNamedAndRemoveUntil(
-                    context, '/login', (_) => false);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+  Future<void> _loadDorms() async {
+    try {
+      final items = await DormService.getDorms();
+      setState(() => _dorms = items);
+    } catch (e) {
+      debugPrint('Ошибка загрузки общежитий: $e');
+    }
   }
 
-  // ------- КРУПНАЯ ФОТОГРАФИЯ ---------------------------------------------
-  Widget _buildImageSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Image.asset(
-          'assets/dorm.png',
-          width: double.infinity,
-          fit: BoxFit.cover,
-        ),
-      ),
-    );
-  }
-
-  // ------- ИНФО‑БЛОК -------------------------------------------------------
-  Widget _buildInfoSection(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          Text('Information about Dorms',
-              style: GoogleFonts.montserrat(
-                  fontSize: 18, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: () => Navigator.pushNamed(context, '/3d_tour'),
-            child: const Text('3D room tour'),
+  PreferredSizeWidget _buildHeader() => AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.red, size: 28),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pushNamed(context, '/rules'),
-            child: const Text('Rules of residence'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {},
-            child: const Text('Subscribe',
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ------- БАННЕР ----------------------------------------------------------
-  Widget _buildResearchBanner() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Image.asset(
-          'assets/student_research.png',
-          width: double.infinity,
-          fit: BoxFit.cover,
         ),
-      ),
-    );
-  }
+        title: Text(
+          'DormMate',
+          style: GoogleFonts.montserrat(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
+          ),
+        ),
+        centerTitle: true,
+      );
 
-  // ------- ФУТЕР -----------------------------------------------------------
-  Widget _buildFooter() {
-    return Container(
-      color: Colors.black,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('NARXOZ UNIVERSITY',
-              style: GoogleFonts.montserrat(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white)),
-          const SizedBox(height: 10),
-          const Row(
+  Drawer _buildDrawer(BuildContext ctx) => Drawer(
+        child: SafeArea(
+          child: ListView(
+            padding: EdgeInsets.zero,
             children: [
-              Icon(FontAwesomeIcons.facebook, color: Colors.white),
-              SizedBox(width: 10),
-              Icon(FontAwesomeIcons.twitter, color: Colors.white),
-              SizedBox(width: 10),
-              Icon(FontAwesomeIcons.instagram, color: Colors.white),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    hintText: 'mail@example.com',
-                  ),
+              DrawerHeader(
+                decoration: const BoxDecoration(color: Colors.red),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.account_circle, color: Colors.white, size: 50),
+                    const SizedBox(height: 12),
+                    Text('Меню',
+                        style: GoogleFonts.montserrat(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
+                  ],
                 ),
               ),
-              const SizedBox(width: 10),
-              ElevatedButton(
-                style:
-                    ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () {},
-                child:
-                    const Text('Subscribe', style: TextStyle(color: Colors.white)),
+              ListTile(
+                leading: const Icon(Icons.home),
+                title: const Text('Главная'),
+                onTap: () => Navigator.pushReplacementNamed(ctx, '/home'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.chat_bubble_outline),
+                title: const Text('Чат'),
+                onTap: () => Navigator.pushReplacementNamed(ctx, '/chat'),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Выход'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.pushReplacementNamed(ctx, '/login');
+                },
               ),
             ],
           ),
+        ),
+      );
+
+  BottomNavigationBar _buildBottomNavigationBar(BuildContext ctx) =>
+      BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.red,
+        unselectedItemColor: Colors.grey,
+        currentIndex: 0,
+        onTap: (idx) {
+          switch (idx) {
+            case 0:
+              Navigator.pushReplacementNamed(ctx, '/home');
+              break;
+            case 1:
+              Navigator.pushReplacementNamed(ctx, '/apply');
+              break;
+            case 2:
+              Navigator.pushReplacementNamed(ctx, '/chat');
+              break;
+            case 3:
+              Navigator.pushReplacementNamed(ctx, '/notifications');
+              break;
+            case 4:
+              Navigator.pushReplacementNamed(ctx, '/profile');
+              break;
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard_customize_outlined), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.notifications_none_outlined), label: ''),
+          BottomNavigationBarItem(
+              icon: CircleAvatar(
+                  radius: 12, backgroundImage: AssetImage('assets/avatar.png')),
+              label: ''),
         ],
-      ),
-    );
-  }
+      );
 
-    BottomNavigationBar _buildBottomNavigationBar(BuildContext context) {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.red,
-      unselectedItemColor: Colors.grey,
-      currentIndex: 3,
-      onTap: (index) {
-        switch (index) {
-          case 0:
-            Navigator.pushReplacementNamed(context, '/home');
-            break;
-          case 1:
-            Navigator.pushReplacementNamed(context, '/apply');
-            break;
-          case 2:
-            Navigator.pushReplacementNamed(context, '/chat');
-            break;
-          case 3:
-            Navigator.pushReplacementNamed(context, '/notification');
-            break;
-          case 4:
-            Navigator.pushReplacementNamed(context, '/profile');
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard_customize_outlined), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.notifications_none_outlined), label: ''),
-        BottomNavigationBarItem(icon: CircleAvatar(radius: 12, backgroundImage: AssetImage('assets/avatar.png')), label: ''),
-      ],
-    );
-  }
-
-
-  // ====================== BUILD ============================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: _buildHeader(),
+      drawer: _buildDrawer(context),
       backgroundColor: Colors.white,
-      appBar: _buildHeader(),            // верхняя панель
-      drawer: _buildDrawer(context),     // бургер‑меню
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildImageSection(),
-            _buildInfoSection(context),
-            _buildResearchBanner(),
-            _buildFooter(),
-          ],
-        ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(height: 200, child: BannerCarousel()),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => UsefulInfoPage()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                textStyle: GoogleFonts.montserrat(
+                    fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              child: const Text('Полезное для студентов'),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: _dorms.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (ctx, i) {
+                final dorm = _dorms[i];
+                final isEven = i % 2 == 0;
+                final images = dorm['images'] as List<dynamic>?;
+                final imageUrl = (images != null && images.isNotEmpty)
+                    ? images[0]['image'] as String
+                    : 'assets/banner.png';
+
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  elevation: 2,
+                  color: isEven ? Colors.grey[100] : Colors.white,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => Navigator.pushNamed(context, '/dorm/${dorm['id']}'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              imageUrl,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(dorm['name'] as String,
+                                    style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                Text('₸${dorm['cost']}',
+                                    style: const TextStyle(fontSize: 16)),
+                                const SizedBox(height: 2),
+                                Text(dorm['address'] as String? ?? '',
+                                    style: const TextStyle(
+                                        fontSize: 14, color: Colors.grey)),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios,
+                              size: 16, color: Colors.grey),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(context),
     );

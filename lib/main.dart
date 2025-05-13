@@ -8,8 +8,7 @@ import 'screens/chat_screen.dart';
 import 'screens/apply_screen.dart';
 import 'screens/test_page.dart';
 import 'screens/notifications_screen.dart';
-
-// --- Админские:
+import 'screens/dorm_detail_page.dart';
 import 'screens/admin/admin_main_screen.dart';
 
 void main() {
@@ -36,13 +35,23 @@ class DormMateApp extends StatelessWidget {
             '/apply': (context) => ApplyScreen(),
             '/testpage': (context) => TestPage(),
             '/notification': (context) => NotificationsScreen(
-                  onOpenChat: () {
-                    Navigator.pushNamed(context, '/chat');
-                  },
-                ),
-
-            // Новый маршрут
+              onOpenChat: () {
+                Navigator.pushNamed(context, '/chat');
+              },
+            ),
             '/adminMain': (context) => const AdminMainScreen(),
+          },
+          onGenerateRoute: (settings) {
+            if (settings.name?.startsWith('/dorm/') == true) {
+              final idString = settings.name!.split('/').last;
+              final id = int.tryParse(idString);
+              if (id != null) {
+                return MaterialPageRoute(
+                  builder: (_) => DormDetailPage(dormId: id),
+                );
+              }
+            }
+            return null;
           },
         );
       },
