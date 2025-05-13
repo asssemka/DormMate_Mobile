@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'welcome_screen.dart'; // Импортируем WelcomeScreen
 
 class SplashScreen extends StatelessWidget {
+  const SplashScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     Future.delayed(Duration(seconds: 1), () {
