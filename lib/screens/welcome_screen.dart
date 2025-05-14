@@ -49,8 +49,8 @@ class WelcomeScreen extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(bottom: 30.h),
               child: Image.asset(
-                'assets/logo.png', // Логотип Narxoz
-                width: 110.w, // Размер логотипа
+                'assets/logo.png', 
+                width: 110.w,
                 fit: BoxFit.contain,
               ),
             ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api.dart';
 
-/// Отображает конкретный чат (сообщения + поле ввода)
 class AdminChatScreen extends StatefulWidget {
   final int chatId;
   final String studentName;
@@ -59,7 +58,6 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
     try {
       await ChatService.sendMessage(widget.chatId, text);
       inputCtrl.clear();
-      // Перезагрузим сообщения
       _loadMessages();
     } catch (e) {
       setState(() => error = "Ошибка при отправке: $e");
@@ -69,7 +67,6 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
   Future<void> _endChat() async {
     try {
       await ChatService.endChat(widget.chatId);
-      // Можно выключить ввод, показать «Чат завершён»
       setState(() {
         messages.add({
           "id": "end",

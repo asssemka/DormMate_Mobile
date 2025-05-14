@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _loading = false;
   String? _error;
+  bool _showPassword = false;
 
   @override
   void initState() {
@@ -91,6 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
     required String hint,
     required IconData icon,
     bool obscure = false,
+    Widget? suffixIcon,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10),
@@ -103,6 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
         obscureText: obscure,
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Colors.black87),
+          suffixIcon: suffixIcon,
           hintText: hint,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -118,12 +121,10 @@ class _LoginScreenState extends State<LoginScreen> {
         fit: StackFit.expand,
         children: [
           Image.asset(
-            'assets/dorm_background.png', // картинка как на макете
+            'assets/dorm_background.png',
             fit: BoxFit.cover,
           ),
-          Container(
-            color: Colors.white.withOpacity(0.5),
-          ),
+          Container(color: Colors.white.withOpacity(0.5)),
           Center(
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 40.w),
@@ -140,7 +141,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _passCtr,
                     hint: 'Password',
                     icon: Icons.lock,
-                    obscure: true,
+                    obscure: !_showPassword,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _showPassword ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.black54,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _showPassword = !_showPassword;
+                        });
+                      },
+                    ),
                   ),
                   if (_error != null)
                     Padding(
@@ -153,9 +165,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFD50032),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(30.0),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                      elevation: 3,
+                      shadowColor: Colors.black26,
                     ),
                     child: _loading
                         ? const SizedBox(
@@ -163,7 +177,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: 24,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Sign In', style: TextStyle(fontSize: 16)),
+                        : Text(
+                            'Log In',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                   ),
                   const SizedBox(height: 40),
                   Image.asset('assets/logo.png', height: 40),

@@ -82,13 +82,15 @@ class _HomePageState extends State<HomePage> {
               ),
               const Divider(),
               ListTile(
-                leading: const Icon(Icons.logout),
-                title: const Text('Выход'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.pushReplacementNamed(ctx, '/login');
-                },
-              ),
+  leading: const Icon(Icons.logout),
+  title: const Text('Выход'),
+  onTap: () async {
+    Navigator.pop(ctx);
+    await AuthService.logout(); 
+    Navigator.pushNamedAndRemoveUntil(ctx, '/login', (route) => false);
+  },
+),
+
             ],
           ),
         ),
@@ -112,7 +114,7 @@ class _HomePageState extends State<HomePage> {
               Navigator.pushReplacementNamed(ctx, '/chat');
               break;
             case 3:
-              Navigator.pushReplacementNamed(ctx, '/notifications');
+              Navigator.pushReplacementNamed(ctx, '/notification');
               break;
             case 4:
               Navigator.pushReplacementNamed(ctx, '/profile');
