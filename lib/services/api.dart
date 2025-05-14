@@ -198,6 +198,25 @@ class ApplicationService {
     }
   }
 
+    static Future<void> uploadAvatar(File file) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse("http://127.0.0.1:8000/api/v1/upload-avatar/"),
+    );
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'avatar',
+        file.readAsBytesSync(),
+        filename: file.path.split("/").last,
+      ),
+    );
+
+    final response = await request.send();
+    if (response.statusCode != 200) {
+      throw Exception('Не удалось загрузить аватар');
+    }
+  }
+
   /// Загрузка скриншота оплаты POST /upload_payment_screenshot/
   static Future<void> uploadPaymentScreenshot(File screenshot) async {
     final prefs = await SharedPreferences.getInstance();

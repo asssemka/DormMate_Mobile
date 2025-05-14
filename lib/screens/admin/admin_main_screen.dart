@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../services/api.dart';               // AuthService.logout()
+import '../../services/api.dart';               
 import 'admin_home_screen.dart';
 import 'admin_chat_list_screen.dart';
 import 'admin_notifications_screen.dart';
 
-/// Главное «дно» администратора: 3 вкладки (Home, Chats, Notifs)
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({Key? key}) : super(key: key);
 

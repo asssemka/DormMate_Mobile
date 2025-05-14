@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../services/api.dart';
 import 'admin_chat_screen.dart';
 
-/// Список активных чатов. Похоже на ChatList (React).
 class AdminChatListScreen extends StatefulWidget {
   const AdminChatListScreen({Key? key}) : super(key: key);
 
@@ -28,8 +27,6 @@ class _AdminChatListScreenState extends State<AdminChatListScreen> {
     });
     try {
       final data = await ChatService.fetchAllChats(); 
-      // Предположим, что ChatService.fetchAllChats() -> GET /chats/ 
-      // возвращает List<Map<String, dynamic>>
       setState(() {
         chats = data;
       });
@@ -43,8 +40,6 @@ class _AdminChatListScreenState extends State<AdminChatListScreen> {
   }
 
   void _openChat(int chatId, String studentName) {
-    // Переходим на AdminChatScreen 
-    // через push (или pushNamed, как тебе удобнее)
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -72,8 +67,6 @@ class _AdminChatListScreenState extends State<AdminChatListScreen> {
       itemCount: chats.length,
       itemBuilder: (context, index) {
         final chat = chats[index];
-        // Предположим, у нас есть chat["student"] = { "s", "first_name", "last_name" }, 
-        // chat["id"], chat["has_new_messages"]
         final student = chat["student"] as Map<String, dynamic>;
         final chatId = chat["id"] as int;
         final hasNew = chat["has_new_messages"] == true;

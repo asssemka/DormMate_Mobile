@@ -145,7 +145,7 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
           children: [
             Text(
               text,
-              style: TextStyle(
+              style: GoogleFonts.montserrat(
                 color: isUser ? Colors.white : Colors.black,
                 fontSize: 15,
               ),
@@ -153,7 +153,7 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
             const SizedBox(height: 4),
             Text(
               time,
-              style: TextStyle(
+              style: GoogleFonts.montserrat(
                 fontSize: 10,
                 color: isUser ? Colors.white70 : Colors.black54,
               ),
@@ -176,13 +176,13 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
-          children: const [
-            CircleAvatar(
+          children: [
+            const CircleAvatar(
               radius: 20,
               backgroundImage: AssetImage('assets/chatbot.png'),
             ),
-            SizedBox(height: 4),
-            Text('ChatBot', style: TextStyle(color: Colors.black, fontSize: 16)),
+            const SizedBox(height: 4),
+            Text('ChatBot', style: GoogleFonts.montserrat(color: Colors.black, fontSize: 16)),
           ],
         ),
         centerTitle: true,
@@ -211,8 +211,10 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
                   Expanded(
                     child: TextField(
                       controller: inputController,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter text message',
+                      style: GoogleFonts.montserrat(),
+                      decoration: InputDecoration(
+                        hintText: 'Введите сообщение',
+                        hintStyle: GoogleFonts.montserrat(color: Colors.grey),
                         border: InputBorder.none,
                       ),
                       onSubmitted: (_) => _handleSendMessage(),
@@ -231,19 +233,29 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
             ),
           if (chatActive)
             Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 10, top: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  ElevatedButton(
+                  ElevatedButton.icon(
                     onPressed: _requestOperator,
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
-                    child: const Text('Вызвать оператора'),
+                    icon: const Icon(Icons.support_agent),
+                    label: Text('Оператор', style: GoogleFonts.montserrat()),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 240, 255, 251),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
-                  ElevatedButton(
+                  ElevatedButton.icon(
                     onPressed: _endChat,
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                    child: const Text('Завершить чат'),
+                    icon: const Icon(Icons.close),
+                    label: Text('Завершить', style: GoogleFonts.montserrat()),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 199, 40, 29),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
                 ],
               ),

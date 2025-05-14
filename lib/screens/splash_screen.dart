@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'welcome_screen.dart'; // Импортируем WelcomeScreen
+import 'welcome_screen.dart'; 
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -9,7 +9,7 @@ class SplashScreen extends StatelessWidget {
     Future.delayed(Duration(seconds: 1), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => WelcomeScreen()), // Переход на WelcomeScreen
+        MaterialPageRoute(builder: (context) => WelcomeScreen()), 
       );
     });
 
@@ -18,7 +18,7 @@ class SplashScreen extends StatelessWidget {
       body: Center(
         child: Image.asset(
           'assets/logo.png', 
-          width: 200, // Сделал размер чуть меньше для аккуратности
+          width: 200, 
         ),
       ),
     );

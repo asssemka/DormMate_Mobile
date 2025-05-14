@@ -1,8 +1,6 @@
-// lib/screens/test_page.dart
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../services/api.dart'; // здесь лежит RefreshHttpClient
+import '../services/api.dart'; 
 
 class TestPage extends StatefulWidget {
   const TestPage({Key? key}) : super(key: key);
@@ -105,21 +103,18 @@ class _TestPageState extends State<TestPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 1) Загрузка
     if (loading) {
       return Scaffold(
         appBar: AppBar(title: const Text('Психологический тест')),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
-    // 2) Вопросов нет
     if (questions.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Психологический тест')),
         body: const Center(child: Text('Вопросы не найдены')),
       );
     }
-    // 3) Показ вопроса
     final q = questions[currentIndex];
     final opts = <Map<String, String>>[];
     if ((q['answer_variant_a'] ?? '').toString().isNotEmpty) {

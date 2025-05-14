@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/api.dart';
 
-/// Уведомления для админа: GET /notifications/admin/
 class AdminNotificationsScreen extends StatefulWidget {
   const AdminNotificationsScreen({Key? key}) : super(key: key);
 
@@ -31,7 +30,6 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
   Future<void> _fetchNotifications() async {
     try {
       final data = await NotificationsService.getAdminNotifications(); 
-      // Метод GET /notifications/admin/
       setState(() {
         notifications = data;
       });

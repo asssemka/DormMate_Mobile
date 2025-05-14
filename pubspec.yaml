@@ -43,6 +43,11 @@ dependencies:
   flutter_map: ^6.1.0
   latlong2: ^0.9.0
   webview_flutter: ^4.4.1
+  url_launcher: ^6.2.5
+  http_parser: ^4.0.2
+
+
+
 
 
 
