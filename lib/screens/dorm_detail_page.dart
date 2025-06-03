@@ -3,8 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'dart:ui' as ui;
-import 'dart:html' as html;
+
+import '../widgets/html_iframe.dart'; // 👈 подключаем общий интерфейс
 
 class DormDetailPage extends StatefulWidget {
   final int dormId;
@@ -35,24 +35,18 @@ class _DormDetailPageState extends State<DormDetailPage> {
       );
 
       if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+
+        if (kIsWeb && data['address'] != null) {
+          final encoded = Uri.encodeComponent(data['address']);
+          final url = 'https://yandex.kz/map-widget/v1/?text=$encoded&z=17.19';
+          registerMapIframe(viewType, url); // 👈 безопасно
+        }
+
         if (!mounted) return;
         setState(() {
-          dorm = jsonDecode(utf8.decode(response.bodyBytes));
+          dorm = data;
           loading = false;
-
-          if (kIsWeb && dorm!['address'] != null) {
-            final encoded = Uri.encodeComponent(dorm!['address']);
-            final url = 'https://yandex.kz/map-widget/v1/?text=$encoded&z=17.19';
-
-            // Регистрируем iframe только на Web
-            // ignore: undefined_prefixed_name
-            ui.platformViewRegistry.registerViewFactory(viewType, (int viewId) {
-              final iframe = html.IFrameElement()
-                ..src = url
-                ..style.border = 'none';
-              return iframe;
-            });
-          }
         });
       } else {
         throw Exception('Ошибка при загрузке общежития');
@@ -118,7 +112,7 @@ class _DormDetailPageState extends State<DormDetailPage> {
                       if (kIsWeb && dorm!['address'] != null)
                         SizedBox(
                           height: 300,
-                          child: HtmlElementView(viewType: viewType),
+                          child: buildMapIframe(viewType), // 👈 безопасный вызов
                         ),
                     ],
                   ),

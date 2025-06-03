@@ -14,6 +14,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> _dorms = [];
+  String? pdfUrl;
 
   @override
   void initState() {
@@ -35,16 +36,18 @@ class _HomePageState extends State<HomePage> {
         elevation: 0,
         leading: Builder(
           builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.red, size: 28),
+            icon: const Icon(Icons.menu, color: Color(0xFFD50032), size: 28),
             onPressed: () => Scaffold.of(ctx).openDrawer(),
+            tooltip: 'Меню',
           ),
         ),
         title: Text(
           'DormMate',
           style: GoogleFonts.montserrat(
-            fontSize: 22,
+            fontSize: 26,
             fontWeight: FontWeight.bold,
-            color: Colors.red,
+            color: const Color(0xFFD50032),
+            letterSpacing: 1.2,
           ),
         ),
         centerTitle: true,
@@ -56,7 +59,7 @@ class _HomePageState extends State<HomePage> {
             padding: EdgeInsets.zero,
             children: [
               DrawerHeader(
-                decoration: const BoxDecoration(color: Colors.red),
+                decoration: const BoxDecoration(color: Color(0xFFD50032)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -71,35 +74,33 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.home),
+                leading: const Icon(Icons.home, color: Color(0xFFD50032)),
                 title: const Text('Главная'),
                 onTap: () => Navigator.pushReplacementNamed(ctx, '/home'),
               ),
               ListTile(
-                leading: const Icon(Icons.chat_bubble_outline),
+                leading: const Icon(Icons.chat_bubble_outline, color: Color(0xFFD50032)),
                 title: const Text('Чат'),
                 onTap: () => Navigator.pushReplacementNamed(ctx, '/chat'),
               ),
               const Divider(),
               ListTile(
-  leading: const Icon(Icons.logout),
-  title: const Text('Выход'),
-  onTap: () async {
-    Navigator.pop(ctx);
-    await AuthService.logout(); 
-    Navigator.pushNamedAndRemoveUntil(ctx, '/login', (route) => false);
-  },
-),
-
+                leading: const Icon(Icons.logout, color: Color(0xFFD50032)),
+                title: const Text('Выход'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await AuthService.logout();
+                  Navigator.pushNamedAndRemoveUntil(ctx, '/login', (route) => false);
+                },
+              ),
             ],
           ),
         ),
       );
 
-  BottomNavigationBar _buildBottomNavigationBar(BuildContext ctx) =>
-      BottomNavigationBar(
+  BottomNavigationBar _buildBottomNavigationBar(BuildContext ctx) => BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.red,
+        selectedItemColor: const Color(0xFFD50032),
         unselectedItemColor: Colors.grey,
         currentIndex: 0,
         onTap: (idx) {
@@ -127,11 +128,126 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.notifications_none_outlined), label: ''),
           BottomNavigationBarItem(
-              icon: CircleAvatar(
-                  radius: 12, backgroundImage: AssetImage('assets/avatar.png')),
+              icon: CircleAvatar(radius: 12, backgroundImage: AssetImage('assets/avatar.png')),
               label: ''),
         ],
       );
+
+  Widget _buildDormCard(Map<String, dynamic> dorm, bool isEven) {
+    final images = dorm['images'] as List<dynamic>?;
+    final imageUrl = (images != null && images.isNotEmpty) ? images[0]['image'] as String : 'assets/banner.png';
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 5,
+      color: isEven ? Colors.grey[100] : Colors.white,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => Navigator.pushNamed(context, '/dorm/${dorm['id']}'),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(imageUrl, width: 90, height: 90, fit: BoxFit.cover),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(dorm['name'] as String,
+                        style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 6),
+                    Text('₸${dorm['cost']}',
+                        style: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 8),
+                    Text(dorm['address'] as String? ?? '',
+                        style: GoogleFonts.montserrat(fontSize: 14, color: Colors.grey[600])),
+                    const SizedBox(height: 8),
+                    // Удобства с иконками, добавляем здесь:
+                    Row(
+                      children: [
+                        const Icon(FontAwesomeIcons.bed, size: 16, color: Colors.grey),
+                        const SizedBox(width: 6),
+                        Text('${dorm['places'] ?? '—'} мест', style: GoogleFonts.montserrat(fontSize: 14)),
+                        const SizedBox(width: 16),
+                        const Icon(FontAwesomeIcons.utensils, size: 16, color: Colors.grey),
+                        const SizedBox(width: 6),
+                        const Text('Столовая', style: TextStyle(fontSize: 14)),
+                        const SizedBox(width: 16),
+                        const Icon(FontAwesomeIcons.tshirt, size: 16, color: Colors.grey),
+                        const SizedBox(width: 6),
+                        const Text('Прачечная', style: TextStyle(fontSize: 14)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.grey),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFAQSection() {
+    final faqItems = [
+      {
+        'question': 'Что входит в стоимость проживания?',
+        'answer': 'Проживание, коммунальные услуги, пользование кухней и душем.',
+      },
+      {
+        'question': 'Как долго можно проживать в Доме студентов?',
+        'answer': 'На протяжении всего периода обучения при соблюдении правил.',
+      },
+      {
+        'question': 'Кто может получить место в общежитии?',
+        'answer': 'Студенты, подавшие заявку и прошедшие отбор.',
+      },
+      {
+        'question': 'Как происходит заселение?',
+        'answer': 'Выдаётся ордер и заключается договор найма. Прописка оформляется через деканат. Самовольное заселение запрещено.',
+      },
+      {
+        'question': 'Как я могу оплатить проживание?',
+        'answer': 'Оплата производится через университетскую платёжную систему или банк.',
+      },
+      {
+        'question': 'Какие правила проживания я должен соблюдать?',
+        'answer': 'Соблюдение тишины, чистоты, уважение к соседям и имуществу.',
+      },
+      {
+        'question': 'Что произойдёт при нарушении правил?',
+        'answer': 'Предупреждение, штраф или выселение в зависимости от серьёзности.',
+      },
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Часто задаваемые вопросы',
+              style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          ...faqItems.map((item) => ExpansionTile(
+                title: Text(item['question']!, style: GoogleFonts.montserrat(fontWeight: FontWeight.w600)),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+                    child: Text(item['answer']!, style: GoogleFonts.montserrat(fontSize: 14)),
+                  ),
+                ],
+              )),
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -139,13 +255,13 @@ class _HomePageState extends State<HomePage> {
       appBar: _buildHeader(),
       drawer: _buildDrawer(context),
       backgroundColor: Colors.white,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: ListView(
         children: [
-          SizedBox(height: 200, child: BannerCarousel()),
           const SizedBox(height: 16),
+          SizedBox(height: 360, child: BannerCarousel()), // ещё увеличил высоту
+          const SizedBox(height: 24),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -154,81 +270,32 @@ class _HomePageState extends State<HomePage> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: const Color(0xFFD50032),
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                textStyle: GoogleFonts.montserrat(
-                    fontSize: 16, fontWeight: FontWeight.w600),
+                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 18),
+                textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.w700),
               ),
               child: const Text('Полезное для студентов'),
             ),
           ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: _dorms.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (ctx, i) {
-                final dorm = _dorms[i];
-                final isEven = i % 2 == 0;
-                final images = dorm['images'] as List<dynamic>?;
-                final imageUrl = (images != null && images.isNotEmpty)
-                    ? images[0]['image'] as String
-                    : 'assets/banner.png';
-
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                  color: isEven ? Colors.grey[100] : Colors.white,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => Navigator.pushNamed(context, '/dorm/${dorm['id']}'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              imageUrl,
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(dorm['name'] as String,
-                                    style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600)),
-                                const SizedBox(height: 4),
-                                Text('₸${dorm['cost']}',
-                                    style: const TextStyle(fontSize: 16)),
-                                const SizedBox(height: 2),
-                                Text(dorm['address'] as String? ?? '',
-                                    style: const TextStyle(
-                                        fontSize: 14, color: Colors.grey)),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.arrow_forward_ios,
-                              size: 16, color: Colors.grey),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Наши общежития',
+              style: GoogleFonts.montserrat(fontSize: 26, fontWeight: FontWeight.bold),
             ),
           ),
+          const SizedBox(height: 12),
+          ..._dorms.asMap().entries.map((entry) {
+            final i = entry.key;
+            final dorm = entry.value;
+            return _buildDormCard(dorm, i % 2 == 0);
+          }).toList(),
+          const SizedBox(height: 24),
+          _buildFAQSection(),
+          const SizedBox(height: 20),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(context),
