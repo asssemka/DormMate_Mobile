@@ -36,11 +36,22 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
     try {
       final data = await ChatService.fetchMessages(chatId!);
       setState(() {
-        messages = data.map<Map<String, dynamic>>((msg) => {
-          'id': msg['id'],
-          'text': msg['content'],
-          'type': msg['sender_type'],
-          'timestamp': msg['timestamp'] ?? '',
+        messages = data.map<Map<String, dynamic>>((msg) {
+          final timestampStr = msg['timestamp'] ?? '';
+          String formattedTime = '';
+          try {
+            final date = DateTime.parse(timestampStr);
+            formattedTime =
+                '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+          } catch (e) {
+            formattedTime = '';
+          }
+          return {
+            'id': msg['id'],
+            'text': msg['content'],
+            'type': msg['sender_type'],
+            'timestamp': formattedTime,
+          };
         }).toList();
       });
     } catch (e) {
@@ -58,13 +69,17 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
       _fetchMessages();
 
       final autoAnswer = await ChatService.searchAutoAnswer(text);
+      final now = DateTime.now();
+      final formattedNow =
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
       if (autoAnswer != null) {
         setState(() {
           messages.add({
             'id': DateTime.now().millisecondsSinceEpoch,
             'text': autoAnswer,
             'type': 'admin',
-            'timestamp': TimeOfDay.now().format(context),
+            'timestamp': formattedNow,
           });
         });
       } else {
@@ -73,7 +88,7 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
             'id': DateTime.now().millisecondsSinceEpoch + 1,
             'text': 'Администратор подключается к чату...',
             'type': 'admin',
-            'timestamp': TimeOfDay.now().format(context),
+            'timestamp': formattedNow,
           });
         });
       }
@@ -86,12 +101,16 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
     if (chatId == null || !chatActive) return;
     try {
       await ChatService.requestAdmin(chatId!);
+      final now = DateTime.now();
+      final formattedNow =
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
       setState(() {
         messages.add({
           'id': DateTime.now().millisecondsSinceEpoch + 2,
           'text': 'Оператор вызван. Ожидайте...',
           'type': 'admin',
-          'timestamp': TimeOfDay.now().format(context),
+          'timestamp': formattedNow,
         });
       });
     } catch (e) {
@@ -103,13 +122,17 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
     if (chatId == null || !chatActive) return;
     try {
       await ChatService.endChat(chatId!);
+      final now = DateTime.now();
+      final formattedNow =
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
       setState(() {
         chatActive = false;
         messages.add({
           'id': 'end',
           'text': 'Чат завершён.',
           'type': 'admin',
-          'timestamp': TimeOfDay.now().format(context),
+          'timestamp': formattedNow,
         });
       });
     } catch (e) {
@@ -129,15 +152,15 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isUser ? Colors.lightBlueAccent : Colors.grey.shade300,
+          color: isUser ? const Color(0xFFD9F0E4) : Colors.grey.shade200,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(isUser ? 18 : 0),
-            bottomRight: Radius.circular(isUser ? 0 : 18),
+            bottomLeft: Radius.circular(isUser ? 18 : 4),
+            bottomRight: Radius.circular(isUser ? 4 : 18),
           ),
         ),
         child: Column(
@@ -145,17 +168,18 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
           children: [
             Text(
               text,
-              style: TextStyle(
-                color: isUser ? Colors.white : Colors.black,
+              style: GoogleFonts.montserrat(
+                color: isUser ? const Color(0xFF2C5F2D) : Colors.black87,
                 fontSize: 15,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               time,
-              style: TextStyle(
+              style: GoogleFonts.montserrat(
                 fontSize: 10,
-                color: isUser ? Colors.white70 : Colors.black54,
+                color: isUser ? const Color(0xFF2C5F2D).withOpacity(0.7) : Colors.black54,
               ),
             ),
           ],
@@ -167,23 +191,40 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false),
         ),
         title: Column(
-          children: const [
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: AssetImage('assets/chatbot.png'),
-            ),
-            SizedBox(height: 4),
-            Text('ChatBot', style: TextStyle(color: Colors.black, fontSize: 16)),
-          ],
+          children: [
+            // Заменяем фото бота на новое улучшенное
+              Container(
+    width: 40,
+    height: 40,
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      shape: BoxShape.circle,
+    ),
+    child: const Icon(
+      Icons.support_agent, // Можно заменить на любой другой, например: Icons.smart_toy
+      color: Colors.black,
+      size: 24,
+    ),
+  ),
+  const SizedBox(height: 4),
+  Text(
+    'ChatBot',
+    style: GoogleFonts.montserrat(
+      color: Colors.black,
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+    ),
+  ),
+],
         ),
         centerTitle: true,
       ),
@@ -206,13 +247,13 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
               color: Colors.white,
               child: Row(
                 children: [
-                  const Icon(Icons.add_circle_outline, color: Colors.grey),
-                  const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
                       controller: inputController,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter text message',
+                      style: GoogleFonts.montserrat(),
+                      decoration: InputDecoration(
+                        hintText: 'Введите сообщение',
+                        hintStyle: GoogleFonts.montserrat(color: Colors.grey),
                         border: InputBorder.none,
                       ),
                       onSubmitted: (_) => _handleSendMessage(),
@@ -222,7 +263,7 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
                     onTap: _handleSendMessage,
                     child: const CircleAvatar(
                       radius: 18,
-                      backgroundColor: Colors.green,
+                      backgroundColor: Color(0xFF3AAA35),
                       child: Icon(Icons.arrow_upward, color: Colors.white, size: 18),
                     ),
                   ),
@@ -231,19 +272,31 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
             ),
           if (chatActive)
             Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 18, top: 14),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  ElevatedButton(
+                  ElevatedButton.icon(
                     onPressed: _requestOperator,
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
-                    child: const Text('Вызвать оператора'),
+                    icon: const Icon(Icons.support_agent, color: Color(0xFF3AAA35)),
+                    label: Text('Оператор', style: GoogleFonts.montserrat(color: Color(0xFF3AAA35))),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
                   ),
-                  ElevatedButton(
+                  ElevatedButton.icon(
                     onPressed: _endChat,
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                    child: const Text('Завершить чат'),
+                    icon: const Icon(Icons.close, color: Color(0xFFC72727)),
+                    label: Text('Завершить', style: GoogleFonts.montserrat(color: Color(0xFFC72727))),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
                   ),
                 ],
               ),

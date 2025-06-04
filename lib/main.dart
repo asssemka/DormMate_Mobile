@@ -10,6 +10,7 @@ import 'screens/test_page.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/dorm_detail_page.dart';
 import 'screens/admin/admin_main_screen.dart';
+import 'screens/edit_application_screen.dart';
 
 void main() {
   runApp(DormMateApp());
@@ -33,6 +34,7 @@ class DormMateApp extends StatelessWidget {
             '/profile': (context) => ProfileScreen(),
             '/chat': (context) => StudentChatScreen(),
             '/apply': (context) => ApplyScreen(),
+            '/edit-application': (context) => EditApplicationScreen(),
             '/testpage': (context) => TestPage(),
             '/notification': (context) => NotificationsScreen(
               onOpenChat: () {

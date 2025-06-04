@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Простейшая «домашняя» страница администратора.
-/// Здесь только приветствие и заглушка‑статистика.
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({Key? key}) : super(key: key);
 
@@ -22,20 +20,19 @@ class AdminHomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // ───────── КАРТОЧКИ‑СТАТИСТИКИ ─────────
           _buildStatCard(
             icon: Icons.people,
-            label: 'Активных студентов',
+            label: '',
             value: '—',
           ),
           _buildStatCard(
             icon: Icons.chat,
-            label: 'Открытых чатов',
+            label: '',
             value: '—',
           ),
           _buildStatCard(
             icon: Icons.assignment_turned_in,
-            label: 'Заявок в обработке',
+            label: '',
             value: '—',
           ),
 
@@ -47,7 +44,6 @@ class AdminHomeScreen extends StatelessWidget {
     );
   }
 
-  /// Маленькая карточка со значком, меткой и значением
   Widget _buildStatCard({
     required IconData icon,
     required String label,
@@ -68,3 +64,4 @@ class AdminHomeScreen extends StatelessWidget {
     );
   }
 }
+
