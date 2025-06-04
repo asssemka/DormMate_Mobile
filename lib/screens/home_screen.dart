@@ -276,7 +276,7 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 18),
                 textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.w700),
               ),
-              child: const Text('Полезное для студентов'),
+              child: const Text('Полезное для студентов убрать'),
             ),
           ),
           const SizedBox(height: 24),
