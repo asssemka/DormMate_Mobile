@@ -258,7 +258,7 @@ class _HomePageState extends State<HomePage> {
       body: ListView(
         children: [
           const SizedBox(height: 16),
-          SizedBox(height: 360, child: BannerCarousel()), // ещё увеличил высоту
+          SizedBox(height: 240, child: BannerCarousel()), // ещё увеличил высоту
           const SizedBox(height: 24),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -289,10 +289,14 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 12),
           ..._dorms.asMap().entries.map((entry) {
-            final i = entry.key;
-            final dorm = entry.value;
-            return _buildDormCard(dorm, i % 2 == 0);
-          }).toList(),
+  final i = entry.key;
+  final dorm = entry.value;
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 20), // Отступ между карточками
+    child: _buildDormCard(dorm, i % 2 == 0),
+  );
+}).toList(),
+
           const SizedBox(height: 24),
           _buildFAQSection(),
           const SizedBox(height: 20),

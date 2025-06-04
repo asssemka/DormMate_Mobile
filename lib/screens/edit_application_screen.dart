@@ -23,8 +23,6 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
   final picker = ImagePicker();
 
   bool isLoading = true;
-  bool isModalOpen = false;
-
   String? selectedDormCost;
   final parentPhoneCtrl = TextEditingController();
   final entResultCtrl = TextEditingController();
@@ -39,7 +37,6 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
     try {
       final client = RefreshHttpClient();
       final student = await AuthService.getStudentData();
-
       final resApp = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/application/"));
       final appData = jsonDecode(utf8.decode(resApp.bodyBytes));
 
@@ -47,29 +44,25 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
       final evidencesRaw = jsonDecode(utf8.decode(resEvidence.bodyBytes));
       final evidences = evidencesRaw is Map && evidencesRaw.containsKey('results')
           ? List<Map<String, dynamic>>.from(evidencesRaw['results'])
-          : List<Map<String, dynamic>>.from(evidencesRaw is List ? evidencesRaw : []);
+          : List<Map<String, dynamic>>.from(evidencesRaw);
 
       final resTypes = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/evidence-types/"));
       final typesRaw = jsonDecode(utf8.decode(resTypes.bodyBytes));
       final types = typesRaw is Map && typesRaw.containsKey('results')
           ? List<Map<String, dynamic>>.from(typesRaw['results'])
-          : List<Map<String, dynamic>>.from(typesRaw is List ? typesRaw : []);
+          : List<Map<String, dynamic>>.from(typesRaw);
 
       final resPrices = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/dorms/costs/"));
       final pricesRaw = jsonDecode(utf8.decode(resPrices.bodyBytes));
       final prices = pricesRaw is Map && pricesRaw.containsKey('results')
           ? List<String>.from(pricesRaw['results'].map((e) => e.toString()))
-          : List<String>.from((pricesRaw is List ? pricesRaw : []).map((e) => e.toString()));
+          : List<String>.from(pricesRaw.map((e) => e.toString()));
 
       final mappedDocs = <String, dynamic>{};
       for (var ev in evidences) {
         final code = ev['code'];
         if (ev['file'] != null) {
-          mappedDocs[code] = {
-            'url': ev['file'],
-            'name': ev['name'],
-            'existing': true
-          };
+          mappedDocs[code] = {'url': ev['file'], 'name': ev['name'], 'existing': true};
         }
       }
 
@@ -85,7 +78,7 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
         isLoading = false;
       });
     } catch (e) {
-      debugPrint("Ошибка при загрузке данных: $e");
+      debugPrint("Ошибка: $e");
     }
   }
 
@@ -93,17 +86,13 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
     final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
     if (result != null && result.files.isNotEmpty) {
       final file = result.files.first;
-      setState(() {
-        documents[code] = file;
-      });
+      setState(() => documents[code] = file);
     }
   }
 
   void removeFile(String code) {
     setState(() {
-      if (documents[code] != null && documents[code] is Map && documents[code]['existing'] == true) {
-        removedDocs.add(code);
-      }
+      if (documents[code]?['existing'] == true) removedDocs.add(code);
       documents.remove(code);
     });
   }
@@ -119,15 +108,30 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
       request.fields['parent_phone'] = parentPhoneCtrl.text;
       request.fields['ent_result'] = entResultCtrl.text;
 
-      documents.forEach((code, value) {
-        if (value is PlatformFile) {
-          request.files.add(http.MultipartFile.fromBytes(
-            code,
-            File(value.path!).readAsBytesSync(),
-            filename: value.name,
-          ));
-        }
-      });
+    documents.forEach((code, value) {
+  if (value is PlatformFile) {
+    if (value.bytes != null) {
+      // Web: используем bytes напрямую
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          code,
+          value.bytes!,
+          filename: value.name,
+        ),
+      );
+    } else if (value.path != null) {
+      // Mobile/Desktop: читаем файл с диска
+      final fileBytes = File(value.path!).readAsBytesSync();
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          code,
+          fileBytes,
+          filename: value.name,
+        ),
+      );
+    }
+  }
+});
 
       if (removedDocs.isNotEmpty) {
         request.fields['deleted_documents'] = jsonEncode(removedDocs);
@@ -137,83 +141,28 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         Navigator.pushReplacementNamed(context, '/profile');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка при обновлении: ${response.statusCode}')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: ${response.statusCode}')));
       }
     } catch (e) {
       debugPrint('Ошибка при отправке: $e');
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Редактирование заявки", style: GoogleFonts.montserrat()),
-        backgroundColor: Colors.red,
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: DefaultTextStyle(
-                style: GoogleFonts.montserrat(),
-                child: Column(
-                  children: [
-                    _buildTextField("Имя", studentData['first_name']),
-                    _buildTextField("Фамилия", studentData['last_name']),
-                    _buildTextField("Курс", studentData['course']?.toString()),
-                    _buildTextField("Пол", studentData['gender'] == 'M' ? 'Мужской' : 'Женский'),
-                    _buildTextField("Дата рождения", studentData['birth_date']),
-                    _buildEditableField("Телефон родителя", parentPhoneCtrl),
-                    _buildEditableField("Результат ЕНТ", entResultCtrl),
-                    const SizedBox(height: 10),
-                    DropdownButtonFormField<String>(
-                      value: selectedDormCost,
-                      decoration: const InputDecoration(
-                        labelText: 'Ценовой диапазон',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: dormitoryPrices
-                          .map((cost) => DropdownMenuItem(
-                                value: cost,
-                                child: Text("$cost тг", style: GoogleFonts.montserrat()),
-                              ))
-                          .toList(),
-                      onChanged: (val) => setState(() => selectedDormCost = val),
-                    ),
-                    const SizedBox(height: 20),
-                    ...evidenceTypes.map((doc) => _buildFileRow(doc)),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: submitChanges,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        minimumSize: const Size.fromHeight(48),
-                      ),
-                      child: Text("Сохранить изменения", style: GoogleFonts.montserrat(color: Colors.white)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-    );
-  }
-
   Widget _buildTextField(String label, String? value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: TextFormField(
-        initialValue: value ?? '',
-        readOnly: true,
-        style: GoogleFonts.montserrat(),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: GoogleFonts.montserrat(),
-          border: OutlineInputBorder(),
-          fillColor: Colors.grey.shade100,
-          filled: true,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
+            Text(value ?? '-', style: GoogleFonts.montserrat()),
+          ],
         ),
       ),
     );
@@ -222,13 +171,15 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
   Widget _buildEditableField(String label, TextEditingController ctrl) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: TextFormField(
+      child: TextField(
         controller: ctrl,
         style: GoogleFonts.montserrat(),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: GoogleFonts.montserrat(),
-          border: OutlineInputBorder(),
+          filled: true,
+          fillColor: Colors.grey.shade100,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         ),
       ),
     );
@@ -238,44 +189,104 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
     final code = doc['code'];
     final label = doc['label'] ?? doc['name'];
     final file = documents[code];
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
-          Row(
-            children: [
-              if (file != null)
-                file is PlatformFile
-                    ? Text(file.name, style: GoogleFonts.montserrat())
-                    : InkWell(
-                        onTap: () async {
-                          final url = Uri.parse(file['url']);
-                          if (await canLaunchUrl(url)) {
-                            await launchUrl(url);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Невозможно открыть ссылку')),
-                            );
-                          }
-                        },
-                        child: Text(file['name'], style: GoogleFonts.montserrat(color: Colors.blue)),
-                      ),
-              const SizedBox(width: 8),
-              TextButton(
-                onPressed: () => removeFile(code),
-                child: Text("Удалить", style: GoogleFonts.montserrat(color: Colors.red)),
-              ),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.upload_file),
-                onPressed: () => pickFile(code),
-              ),
-            ],
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: file == null
+                      ? Text('Файл не выбран', style: GoogleFonts.montserrat(color: Colors.grey))
+                      : file is PlatformFile
+                          ? Text(file.name, style: GoogleFonts.montserrat())
+                          : InkWell(
+                              onTap: () async {
+                                final url = Uri.parse(file['url']);
+                                if (await canLaunchUrl(url)) {
+                                  await launchUrl(url);
+                                }
+                              },
+                              child: Text(file['name'], style: GoogleFonts.montserrat(color: Colors.blue)),
+                            ),
+                ),
+                IconButton(onPressed: () => removeFile(code), icon: Icon(Icons.delete, color: Colors.red)),
+                IconButton(onPressed: () => pickFile(code), icon: Icon(Icons.upload_file)),
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  @override
+void dispose() {
+  parentPhoneCtrl.dispose();
+  entResultCtrl.dispose();
+  super.dispose();
+}
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.red,
+        title: Text("Редактирование заявки", style: GoogleFonts.montserrat()),
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTextField("Имя", studentData['first_name']),
+                  _buildTextField("Фамилия", studentData['last_name']),
+                  _buildTextField("Курс", studentData['course']?.toString()),
+                  _buildTextField("Пол", studentData['gender'] == 'M' ? 'Мужской' : 'Женский'),
+                  _buildTextField("Дата рождения", studentData['birth_date']),
+                  _buildEditableField("Телефон родителя", parentPhoneCtrl),
+                  _buildEditableField("Результат ЕНТ", entResultCtrl),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: dormitoryPrices.contains(selectedDormCost) ? selectedDormCost : null,
+                    decoration: InputDecoration(
+                      labelText: 'Ценовой диапазон',
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                    ),
+                    items: dormitoryPrices.map((cost) => DropdownMenuItem(value: cost, child: Text("$cost тг"))).toList(),
+                    onChanged: (val) => setState(() => selectedDormCost = val),
+                  ),
+                  const SizedBox(height: 20),
+                  ...evidenceTypes.map((doc) => _buildFileRow(doc)).toList(),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: submitChanges,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    child: Text("Сохранить изменения", style: GoogleFonts.montserrat(color: Colors.white)),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }

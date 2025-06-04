@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../services/api.dart'; 
+import 'package:google_fonts/google_fonts.dart';
+import '../services/api.dart';
 
 class TestPage extends StatefulWidget {
   const TestPage({Key? key}) : super(key: key);
@@ -38,17 +39,19 @@ class _TestPageState extends State<TestPage> {
           questions = List<Map<String, dynamic>>.from(list);
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка загрузки: статус ${response.statusCode}')),
-        );
+        _showSnackBar('Ошибка загрузки: статус ${response.statusCode}');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка загрузки: $e')),
-      );
+      _showSnackBar('Ошибка загрузки: $e');
     } finally {
       setState(() => loading = false);
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   void handleNext() {
@@ -61,9 +64,7 @@ class _TestPageState extends State<TestPage> {
 
   Future<void> submitTest() async {
     if (answers.length < questions.length) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Пожалуйста, ответьте на все вопросы')),
-      );
+      _showSnackBar('Пожалуйста, ответьте на все вопросы');
       return;
     }
 
@@ -81,21 +82,14 @@ class _TestPageState extends State<TestPage> {
       );
 
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Тест успешно отправлен!')),
-        );
+        _showSnackBar('Тест успешно отправлен!');
         await Future.delayed(const Duration(seconds: 1));
-        // Здесь переходим на профиль, как вы и просили
         Navigator.pushReplacementNamed(context, '/profile');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка отправки: статус ${response.statusCode}')),
-        );
+        _showSnackBar('Ошибка отправки: статус ${response.statusCode}');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка отправки: $e')),
-      );
+      _showSnackBar('Ошибка отправки: $e');
     } finally {
       setState(() => submitting = false);
     }
@@ -103,85 +97,117 @@ class _TestPageState extends State<TestPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Психологический тест')),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-    if (questions.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Психологический тест')),
-        body: const Center(child: Text('Вопросы не найдены')),
-      );
-    }
-    final q = questions[currentIndex];
-    final opts = <Map<String, String>>[];
-    if ((q['answer_variant_a'] ?? '').toString().isNotEmpty) {
-      opts.add({'value': 'A', 'label': q['answer_variant_a'].toString()});
-    }
-    if ((q['answer_variant_b'] ?? '').toString().isNotEmpty) {
-      opts.add({'value': 'B', 'label': q['answer_variant_b'].toString()});
-    }
-    if ((q['answer_variant_c'] ?? '').toString().isNotEmpty) {
-      opts.add({'value': 'C', 'label': q['answer_variant_c'].toString()});
-    }
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Психологический тест')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Вопрос ${currentIndex + 1} из ${questions.length}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              q['question_text']?.toString() ?? '',
-              style: const TextStyle(fontSize: 18),
-            ),
-            const SizedBox(height: 20),
-            ...opts.map((opt) => RadioListTile<String>(
-                  title: Text(opt['label']!),
-                  value: opt['value']!,
-                  groupValue: answers[currentIndex],
-                  onChanged: (v) => setState(() => answers[currentIndex] = v!),
-                )),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: currentIndex == 0
-                      ? null
-                      : () => setState(() => currentIndex--),
-                  child: const Text('Назад'),
-                ),
-                ElevatedButton(
-                  onPressed: submitting ? null : handleNext,
-                  child: submitting
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          currentIndex == questions.length - 1
-                              ? 'Отправить тест'
-                              : 'Далее',
-                        ),
-                ),
-              ],
-            ),
-          ],
-        ),
+      backgroundColor: const Color(0xFFF6F6F6),
+      appBar: AppBar(
+        title: Text('Психологический тест', style: GoogleFonts.montserrat()),
+        backgroundColor: const Color(0xFFD50032),
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFD50032)))
+          : questions.isEmpty
+              ? const Center(child: Text('Вопросы не найдены'))
+              : Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Вопрос ${currentIndex + 1} из ${questions.length}',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              questions[currentIndex]['question_text'] ?? '',
+                              style: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 20),
+                            ...['A', 'B', 'C'].where((k) => questions[currentIndex]['answer_variant_${k.toLowerCase()}'] != null && questions[currentIndex]['answer_variant_${k.toLowerCase()}'].toString().isNotEmpty).map((k) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: RadioListTile<String>(
+                                  value: k,
+                                  groupValue: answers[currentIndex],
+                                  onChanged: (v) => setState(() => answers[currentIndex] = v!),
+                                  title: Text(
+                                    questions[currentIndex]['answer_variant_${k.toLowerCase()}'],
+                                    style: GoogleFonts.montserrat(fontSize: 16),
+                                  ),
+                                  activeColor: const Color(0xFFD50032),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  tileColor: Colors.grey.shade100,
+                                  selectedTileColor: const Color(0xFFFFEDEE),
+                                ),
+                              );
+                            }).toList(),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          ElevatedButton(
+                            onPressed: currentIndex == 0 ? null : () => setState(() => currentIndex--),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey.shade300,
+                              foregroundColor: Colors.black87,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            child: const Text('Назад'),
+                          ),
+                          ElevatedButton(
+                            onPressed: submitting ? null : handleNext,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFD50032),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            child: submitting
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    currentIndex == questions.length - 1 ? 'Отправить тест' : 'Далее',
+                                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
     );
   }
 }

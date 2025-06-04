@@ -48,10 +48,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   String _formatTime(String iso) {
-    final date = DateTime.tryParse(iso);
-    if (date == null) return '';
-    return DateFormat('HH:mm').format(date);
-  }
+  final date = DateTime.tryParse(iso);
+  if (date == null) return '';
+  return DateFormat('dd.MM.yyyy • HH:mm').format(date);
+}
+
 
   Future<void> _markAsRead(int id) async {
     try {
@@ -202,13 +203,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 6),
-                                      Text(
+                                      Text( 
                                         _formatTime(n['created_at'] ?? ''),
                                         style: GoogleFonts.montserrat(
-                                          fontSize: 13,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
+                                           fontSize: 13,
+                                           color: Colors.grey.shade600,
+                                            ),
+                                            ),
                                     ],
                                   ),
                                 ),
