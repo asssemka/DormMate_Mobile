@@ -26,6 +26,9 @@ dependencies:
   url_launcher: ^6.2.5
   http_parser: ^4.0.2
   cupertino_icons: ^1.0.8
+  flutter_image_slideshow: ^0.1.4
+  animate_do: ^2.1.0
+
 
 dev_dependencies:
   flutter_test:
@@ -56,3 +59,4 @@ flutter:
         default_package: file_picker
       ios:
         default_package: file_picker
+
