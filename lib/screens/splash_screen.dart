@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-import 'welcome_screen.dart'; 
+import 'welcome_screen.dart';
 
 class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
+  final void Function(Locale)? onLanguageChanged;
+
+  const SplashScreen({Key? key, this.onLanguageChanged}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     Future.delayed(Duration(seconds: 1), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => WelcomeScreen()), 
+        MaterialPageRoute(builder: (context) => WelcomeScreen()),
       );
     });
 
@@ -17,8 +19,8 @@ class SplashScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Center(
         child: Image.asset(
-          'assets/logo.png', 
-          width: 200, 
+          'assets/logo.png',
+          width: 200,
         ),
       ),
     );

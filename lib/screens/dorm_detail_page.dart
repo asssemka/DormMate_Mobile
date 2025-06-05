@@ -5,8 +5,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_slideshow/flutter_image_slideshow.dart';
 import 'package:animate_do/animate_do.dart';
-
-import '../widgets/html_iframe.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../widgets/bottom_navigation_bar.dart';
 
 class DormDetailPage extends StatefulWidget {
   final int dormId;
@@ -28,6 +28,14 @@ class _DormDetailPageState extends State<DormDetailPage> {
     super.initState();
     viewType = 'map-${widget.dormId}';
     fetchDorm();
+  }
+
+  void registerMapIframe(String viewType, String url) {
+    // Для Web можем оставить пустым или с print. Для mobile не нужен.
+    if (kIsWeb) {
+      // Просто заглушка
+      print('Registering iframe: $viewType -> $url');
+    }
   }
 
   Future<void> fetchDorm() async {
@@ -81,7 +89,7 @@ class _DormDetailPageState extends State<DormDetailPage> {
           ? const Center(child: CircularProgressIndicator())
           : error != null
               ? Center(child: Text(error!))
-              : FadeInUp( // 👈 Анимация плавного появления
+              : FadeInUp(
                   duration: const Duration(milliseconds: 500),
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
@@ -97,10 +105,7 @@ class _DormDetailPageState extends State<DormDetailPage> {
                           ),
                         ),
                         const SizedBox(height: 20),
-
-                        // 👇 Слайдер изображений
                         _buildImageSlideshow(dorm!['images']),
-
                         const SizedBox(height: 24),
                         _buildCardSection([
                           _infoRow('Описание', dorm!['description'] ?? 'Описание отсутствует'),
@@ -108,10 +113,8 @@ class _DormDetailPageState extends State<DormDetailPage> {
                           _infoRow('Количество мест', '${dorm!['total_places']}'),
                           _infoRow('Адрес', dorm!['address'] ?? 'Не указано'),
                         ]),
-
                         const SizedBox(height: 24),
-
-                        if (kIsWeb && dorm!['address'] != null)
+                        if (dorm!['address'] != null)
                           _buildCardSection([
                             const Padding(
                               padding: EdgeInsets.only(bottom: 12),
@@ -124,11 +127,20 @@ class _DormDetailPageState extends State<DormDetailPage> {
                                 ),
                               ),
                             ),
-                            SizedBox(
-                              height: 300,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: buildMapIframe(viewType),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                final encoded = Uri.encodeComponent(dorm!['address']);
+                                final mapUrl = 'https://yandex.kz/maps/?text=$encoded';
+                                launchUrl(Uri.parse(mapUrl));
+                              },
+                              icon: const Icon(Icons.map),
+                              label: const Text('Открыть карту'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.redAccent,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                shape:
+                                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                             ),
                           ]),
@@ -136,35 +148,35 @@ class _DormDetailPageState extends State<DormDetailPage> {
                     ),
                   ),
                 ),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
     );
   }
 
-Widget _buildImageSlideshow(dynamic imagesRaw) {
-  final List<String> images = imagesRaw != null && imagesRaw.isNotEmpty
-      ? List<String>.from(imagesRaw.map((i) => i['image']))
-      : ['assets/banner.png'];
+  Widget _buildImageSlideshow(dynamic imagesRaw) {
+    final List<String> images = imagesRaw != null && imagesRaw.isNotEmpty
+        ? List<String>.from(imagesRaw.map((i) => i['image']))
+        : ['assets/banner.png'];
 
-  return ClipRRect(
-    borderRadius: BorderRadius.circular(16),
-    child: ImageSlideshow(
-      width: double.infinity,
-      height: 220,
-      initialPage: 0,
-      indicatorColor: Colors.red,
-      indicatorBackgroundColor: Colors.grey.shade300,
-      autoPlayInterval: 3000,
-      isLoop: true,
-      children: images.map((url) {
-        return Image.network(
-          url,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Image.asset('assets/banner.png'),
-        );
-      }).toList(),
-    ),
-  );
-}
-
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: ImageSlideshow(
+        width: double.infinity,
+        height: 220,
+        initialPage: 0,
+        indicatorColor: Colors.red,
+        indicatorBackgroundColor: Colors.grey.shade300,
+        autoPlayInterval: 3000,
+        isLoop: true,
+        children: images.map((url) {
+          return Image.network(
+            url,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Image.asset('assets/banner.png'),
+          );
+        }).toList(),
+      ),
+    );
+  }
 
   Widget _infoRow(String title, String value) {
     return Padding(

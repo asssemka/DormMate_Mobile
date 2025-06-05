@@ -1,127 +1,48 @@
 import 'package:flutter/material.dart';
-import '/screens/apply_screen.dart';
 
-void main() {
-  runApp(DormMateApp());
-}
-
-class DormMateApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => HomeScreen(),  
-        '/apply': (context) => ApplyScreen(), // Исправлено здесь
-        '/chat': (context) => ChatScreen(),
-        '/profile': (context) => ProfileScreen(),
-      },
-    );
-  }
-}
-
-// Проверяем, нужно ли отображать BottomNavigationBar
-bool _shouldShowBottomNavBar(BuildContext context) {
-  final String? currentRoute = ModalRoute.of(context)?.settings.name;
-  return currentRoute != '/login';
-}
-
-// Виджет BottomNavigationBar
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
 
-  BottomNavBar({required this.currentIndex});
-
-  void _onTabTapped(BuildContext context, int index) {
-    String route = '/';
-    switch (index) {
-      case 1:
-        route = '/apply';
-        break;
-      case 2:
-        route = '/chat';
-        break;
-      case 3:
-        route = '/profile';
-        break;
-    }
-
-    if (ModalRoute.of(context)?.settings.name != route) {
-      Navigator.pushReplacementNamed(context, route);
-    }
-  }
+  const BottomNavBar({super.key, required this.currentIndex});
 
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      selectedItemColor: Colors.red,
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: const Color(0xFFD50032),
       unselectedItemColor: Colors.grey,
       currentIndex: currentIndex,
-      onTap: (index) => _onTabTapped(context, index),
-      items: [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.app_registration), label: 'Apply'),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+      onTap: (idx) {
+        switch (idx) {
+          case 0:
+            Navigator.pushReplacementNamed(context, '/home');
+            break;
+          case 1:
+            Navigator.pushReplacementNamed(context, '/apply');
+            break;
+          case 2:
+            Navigator.pushReplacementNamed(context, '/chat');
+            break;
+          case 3:
+            Navigator.pushReplacementNamed(context, '/notification');
+            break;
+          case 4:
+            Navigator.pushReplacementNamed(context, '/profile');
+            break;
+        }
+      },
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.dashboard_customize_outlined), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.notifications_none_outlined), label: ''),
+        BottomNavigationBarItem(
+            icon: CircleAvatar(
+              radius: 12,
+              backgroundImage: AssetImage('assets/avatar.png'),
+            ),
+            label: ''),
       ],
-    );
-  }
-}
-
-// Экраны
-class LoginScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pushReplacementNamed(context, '/');
-          },
-          child: Text('Войти'),
-        ),
-      ),
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(child: Text('Home Screen')),
-      bottomNavigationBar: BottomNavBar(currentIndex: 0),
-    );
-  }
-}
-
-class ApplyScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(child: Text('Apply Screen')),
-      bottomNavigationBar: BottomNavBar(currentIndex: 1),
-    );
-  }
-}
-
-class ChatScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(child: Text('Chat Screen')),
-      bottomNavigationBar: BottomNavBar(currentIndex: 2),
-    );
-  }
-}
-
-class ProfileScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(child: Text('Profile Screen')),
-      bottomNavigationBar: BottomNavBar(currentIndex: 3),
     );
   }
 }

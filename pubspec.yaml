@@ -5,10 +5,14 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.7.0
+  sdk: ">=3.3.0 <4.0.0"
+
+
 
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
   google_fonts: ^4.0.4
   font_awesome_flutter: ^10.7.0
@@ -19,7 +23,6 @@ dependencies:
   image_picker: ^1.0.7
   file_picker: ^6.1.1 
   audioplayers: ^6.4.0
-  intl: ^0.18.1
   flutter_map: ^6.1.0
   latlong2: ^0.9.0
   webview_flutter: ^4.4.1
@@ -28,6 +31,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_image_slideshow: ^0.1.4
   animate_do: ^2.1.0
+  intl: ^0.20.2
 
 
 dev_dependencies:
@@ -37,6 +41,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
+
 
   assets:
     - assets/dorm.png
@@ -52,11 +58,24 @@ flutter:
     - assets/LoginPic1.png
     - assets/LoginPic2.png
     - assets/12.png
+    - assets/back.png
 
-  plugin:
-    platforms:
-      android:
-        default_package: file_picker
-      ios:
-        default_package: file_picker
+    
+
+dependency_overrides:
+  file_picker:
+    git:
+      url: https://github.com/miguelpruivo/flutter_file_picker
+      ref: master
+
+
+  # plugin:
+  #   platforms:
+  #     android:
+  #       default_package: file_picker
+  #     ios:
+  #       default_package: file_picker
+
+
+
 

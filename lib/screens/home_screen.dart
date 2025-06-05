@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/api.dart';
 import '../widgets/banner_carousel.dart';
 import '../widgets/useful_info_page.dart';
+import '../widgets/bottom_navigation_bar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -67,9 +68,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 12),
                     Text('Меню',
                         style: GoogleFonts.montserrat(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
+                            fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                   ],
                 ),
               ),
@@ -98,44 +97,10 @@ class _HomePageState extends State<HomePage> {
         ),
       );
 
-  BottomNavigationBar _buildBottomNavigationBar(BuildContext ctx) => BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFFD50032),
-        unselectedItemColor: Colors.grey,
-        currentIndex: 0,
-        onTap: (idx) {
-          switch (idx) {
-            case 0:
-              Navigator.pushReplacementNamed(ctx, '/home');
-              break;
-            case 1:
-              Navigator.pushReplacementNamed(ctx, '/apply');
-              break;
-            case 2:
-              Navigator.pushReplacementNamed(ctx, '/chat');
-              break;
-            case 3:
-              Navigator.pushReplacementNamed(ctx, '/notification');
-              break;
-            case 4:
-              Navigator.pushReplacementNamed(ctx, '/profile');
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard_customize_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications_none_outlined), label: ''),
-          BottomNavigationBarItem(
-              icon: CircleAvatar(radius: 12, backgroundImage: AssetImage('assets/avatar.png')),
-              label: ''),
-        ],
-      );
-
   Widget _buildDormCard(Map<String, dynamic> dorm, bool isEven) {
     final images = dorm['images'] as List<dynamic>?;
-    final imageUrl = (images != null && images.isNotEmpty) ? images[0]['image'] as String : 'assets/banner.png';
+    final imageUrl =
+        (images != null && images.isNotEmpty) ? images[0]['image'] as String : 'assets/banner.png';
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -172,7 +137,8 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         const Icon(FontAwesomeIcons.bed, size: 16, color: Colors.grey),
                         const SizedBox(width: 6),
-                        Text('${dorm['places'] ?? '—'} мест', style: GoogleFonts.montserrat(fontSize: 14)),
+                        Text('${dorm['places'] ?? '—'} мест',
+                            style: GoogleFonts.montserrat(fontSize: 14)),
                         const SizedBox(width: 16),
                         const Icon(FontAwesomeIcons.utensils, size: 16, color: Colors.grey),
                         const SizedBox(width: 6),
@@ -210,7 +176,8 @@ class _HomePageState extends State<HomePage> {
       },
       {
         'question': 'Как происходит заселение?',
-        'answer': 'Выдаётся ордер и заключается договор найма. Прописка оформляется через деканат. Самовольное заселение запрещено.',
+        'answer':
+            'Выдаётся ордер и заключается договор найма. Прописка оформляется через деканат. Самовольное заселение запрещено.',
       },
       {
         'question': 'Как я могу оплатить проживание?',
@@ -235,7 +202,8 @@ class _HomePageState extends State<HomePage> {
               style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           ...faqItems.map((item) => ExpansionTile(
-                title: Text(item['question']!, style: GoogleFonts.montserrat(fontWeight: FontWeight.w600)),
+                title: Text(item['question']!,
+                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600)),
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
@@ -248,7 +216,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -257,9 +224,16 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.white,
       body: ListView(
         children: [
-          const SizedBox(height: 16),
-          SizedBox(height: 240, child: BannerCarousel()), // ещё увеличил высоту
-          const SizedBox(height: 24),
+          Builder(
+            builder: (context) {
+              final screenWidth = MediaQuery.of(context).size.width;
+              final bannerHeight = screenWidth * 9 / 16; // Соотношение 16:9
+              return SizedBox(
+                height: bannerHeight,
+                child: const BannerCarousel(),
+              );
+            },
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: ElevatedButton(
@@ -289,20 +263,19 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 12),
           ..._dorms.asMap().entries.map((entry) {
-  final i = entry.key;
-  final dorm = entry.value;
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 20), // Отступ между карточками
-    child: _buildDormCard(dorm, i % 2 == 0),
-  );
-}).toList(),
-
+            final i = entry.key;
+            final dorm = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 20), // Отступ между карточками
+              child: _buildDormCard(dorm, i % 2 == 0),
+            );
+          }).toList(),
           const SizedBox(height: 24),
           _buildFAQSection(),
           const SizedBox(height: 20),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(context),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
     );
   }
 }

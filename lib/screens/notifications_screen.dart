@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import '../services/api.dart';
+import '../widgets/bottom_navigation_bar.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final VoidCallback? onOpenChat;
@@ -48,11 +49,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   String _formatTime(String iso) {
-  final date = DateTime.tryParse(iso);
-  if (date == null) return '';
-  return DateFormat('dd.MM.yyyy • HH:mm').format(date);
-}
-
+    final date = DateTime.tryParse(iso);
+    if (date == null) return '';
+    return DateFormat('dd.MM.yyyy • HH:mm').format(date);
+  }
 
   Future<void> _markAsRead(int id) async {
     try {
@@ -70,42 +70,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void _openChat(int id) {
     if (widget.onOpenChat != null) widget.onOpenChat!();
     _markAsRead(id);
-  }
-
-  BottomNavigationBar _buildBottomNavigationBar(BuildContext context) {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(0xFFD50032),
-      unselectedItemColor: Colors.grey.shade600,
-      currentIndex: 3,
-      backgroundColor: Colors.white,
-      onTap: (index) {
-        switch (index) {
-          case 0:
-            Navigator.pushReplacementNamed(context, '/home');
-            break;
-          case 1:
-            Navigator.pushReplacementNamed(context, '/apply');
-            break;
-          case 2:
-            Navigator.pushReplacementNamed(context, '/chat');
-            break;
-          case 3:
-            Navigator.pushReplacementNamed(context, '/notification');
-            break;
-          case 4:
-            Navigator.pushReplacementNamed(context, '/profile');
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard_customize_outlined), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.notifications_none_outlined), label: ''),
-        BottomNavigationBarItem(icon: CircleAvatar(radius: 12, backgroundImage: AssetImage('assets/avatar.png')), label: ''),
-      ],
-    );
   }
 
   @override
@@ -187,7 +151,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     color: const Color(0xFFD50032).withOpacity(0.1),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.notifications, color: Color(0xFFD50032), size: 26),
+                                  child: const Icon(Icons.notifications,
+                                      color: Color(0xFFD50032), size: 26),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
@@ -203,13 +168,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 6),
-                                      Text( 
+                                      Text(
                                         _formatTime(n['created_at'] ?? ''),
                                         style: GoogleFonts.montserrat(
-                                           fontSize: 13,
-                                           color: Colors.grey.shade600,
-                                            ),
-                                            ),
+                                          fontSize: 13,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -220,7 +185,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       onPressed: () => _openChat(n['id']),
                                       style: TextButton.styleFrom(
                                         foregroundColor: const Color(0xFFD50032),
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding:
+                                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         minimumSize: Size.zero,
                                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       ),
@@ -236,7 +202,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       onPressed: () => _markAsRead(n['id']),
                                       style: TextButton.styleFrom(
                                         foregroundColor: Colors.grey.shade600,
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding:
+                                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         minimumSize: Size.zero,
                                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       ),
@@ -256,7 +223,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         },
                       ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(context),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
     );
   }
 }
