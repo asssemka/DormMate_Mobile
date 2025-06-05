@@ -202,29 +202,29 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
         title: Column(
           children: [
             // Заменяем фото бота на новое улучшенное
-              Container(
-    width: 40,
-    height: 40,
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      shape: BoxShape.circle,
-    ),
-    child: const Icon(
-      Icons.support_agent, // Можно заменить на любой другой, например: Icons.smart_toy
-      color: Colors.black,
-      size: 24,
-    ),
-  ),
-  const SizedBox(height: 4),
-  Text(
-    'ChatBot',
-    style: GoogleFonts.montserrat(
-      color: Colors.black,
-      fontSize: 16,
-      fontWeight: FontWeight.w500,
-    ),
-  ),
-],
+            Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.support_agent, // Можно заменить на любой другой, например: Icons.smart_toy
+                color: Colors.black,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'ChatBot',
+              style: GoogleFonts.montserrat(
+                color: Colors.black,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
       ),
@@ -279,7 +279,8 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
                   ElevatedButton.icon(
                     onPressed: _requestOperator,
                     icon: const Icon(Icons.support_agent, color: Color(0xFF3AAA35)),
-                    label: Text('Оператор', style: GoogleFonts.montserrat(color: Color(0xFF3AAA35))),
+                    label:
+                        Text('Оператор', style: GoogleFonts.montserrat(color: Color(0xFF3AAA35))),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
@@ -290,7 +291,8 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
                   ElevatedButton.icon(
                     onPressed: _endChat,
                     icon: const Icon(Icons.close, color: Color(0xFFC72727)),
-                    label: Text('Завершить', style: GoogleFonts.montserrat(color: Color(0xFFC72727))),
+                    label:
+                        Text('Завершить', style: GoogleFonts.montserrat(color: Color(0xFFC72727))),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),

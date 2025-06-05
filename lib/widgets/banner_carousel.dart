@@ -22,8 +22,11 @@ class _BannerCarouselState extends State<BannerCarousel> {
   void initState() {
     super.initState();
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (_current < _banners.length - 1) _current++;
-      else _current = 0;
+      if (_current < _banners.length - 1) {
+        _current++;
+      } else {
+        _current = 0;
+      }
       _controller.animateToPage(
         _current,
         duration: const Duration(milliseconds: 400),
@@ -41,10 +44,13 @@ class _BannerCarouselState extends State<BannerCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double bannerHeight = screenWidth * 0.5; // например, 2:1 по ширине
+
     return Column(
       children: [
         SizedBox(
-          height: 160,
+          height: bannerHeight,
           child: PageView.builder(
             controller: _controller,
             itemCount: _banners.length,
@@ -56,14 +62,11 @@ class _BannerCarouselState extends State<BannerCarousel> {
                 child: Image.asset(
                   _banners[i],
                   fit: BoxFit.cover,
-                  width: double.infinity,
                 ),
               ),
             ),
           ),
         ),
-
-       
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

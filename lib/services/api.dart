@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 
 /// Класс для отправки запросов c автообновлением токена при 401.
 /// При первом 401 делает POST /token/refresh/ и, если успешно, повторяет запрос.
@@ -158,10 +159,9 @@ class AuthService {
   /// Читаем user_type из локального SharedPreferences
   static Future<String?> getUserType() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_type'); 
+    return prefs.getString('user_type');
   }
 }
-
 
 /// Сервис для заявок
 class ApplicationService {
@@ -198,7 +198,7 @@ class ApplicationService {
     }
   }
 
-    static Future<void> uploadAvatar(File file) async {
+  static Future<void> uploadAvatar(File file) async {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse("http://127.0.0.1:8000/api/v1/upload-avatar/"),
@@ -243,10 +243,36 @@ class ApplicationService {
     }
   }
 
+  static Future<void> uploadPaymentScreenshotWeb(Uint8List bytes, String filename) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    if (token == null) throw Exception("Отсутствует токен доступа");
+
+    final request = http.MultipartRequest(
+      "POST",
+      Uri.parse("http://127.0.0.1:8000/api/v1/upload_payment_screenshot/"),
+    )
+      ..headers["Authorization"] = "Bearer $token"
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'payment_screenshot',
+          bytes,
+          filename: filename,
+        ),
+      );
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception("Ошибка загрузки скриншота: ${response.statusCode}");
+    }
+  }
+
   /// Получаем статус заявки GET /application_status/
   static Future<String> fetchApplicationStatus() async {
     final client = RefreshHttpClient();
-    final response = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/application_status/"));
+    final response =
+        await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/application_status/"));
     if (response.statusCode == 200) {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
       return data['status'] ?? 'Статус не найден';
@@ -299,7 +325,8 @@ class ChatService {
   /// GET /questions/?search=...
   static Future<String?> searchAutoAnswer(String query) async {
     final client = RefreshHttpClient();
-    final response = await client.get(Uri.parse("${baseUrl}questions/?search=${Uri.encodeComponent(query)}"));
+    final response =
+        await client.get(Uri.parse("${baseUrl}questions/?search=${Uri.encodeComponent(query)}"));
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
       if (data.isNotEmpty && data[0]['answer'] != null) {
@@ -331,12 +358,12 @@ class ChatService {
     }
   }
 
-    static Future<List<Map<String, dynamic>>> fetchAllChats() async {
+  static Future<List<Map<String, dynamic>>> fetchAllChats() async {
     final client = RefreshHttpClient();
     final response = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/chats/"));
     if (response.statusCode == 200) {
       final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-      return List<Map<String,dynamic>>.from(decoded);
+      return List<Map<String, dynamic>>.from(decoded);
     } else {
       throw Exception("Ошибка fetchAllChats: ${response.statusCode}");
     }
@@ -371,12 +398,13 @@ class NotificationsService {
     }
   }
 
-  static Future<List<Map<String,dynamic>>> getAdminNotifications() async {
+  static Future<List<Map<String, dynamic>>> getAdminNotifications() async {
     final client = RefreshHttpClient();
-    final response = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/notifications/admin/"));
+    final response =
+        await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/notifications/admin/"));
     if (response.statusCode == 200) {
       final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-      return List<Map<String,dynamic>>.from(decoded);
+      return List<Map<String, dynamic>>.from(decoded);
     } else {
       throw Exception("Ошибка getAdminNotifications: ${response.statusCode}");
     }

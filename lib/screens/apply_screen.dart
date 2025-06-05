@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http_parser/http_parser.dart';
+import '../widgets/bottom_navigation_bar.dart';
 
 class ApplyScreen extends StatefulWidget {
   @override
@@ -29,7 +30,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
   }
 
   Future<void> pickFile(String key) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+    final result =
+        await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
     if (result != null && result.files.isNotEmpty) {
       setState(() => documents[key] = result.files.first);
     }
@@ -42,11 +44,14 @@ class _ApplyScreenState extends State<ApplyScreen> {
 
       final dormResponse = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/dorms/costs/"));
       final dormData = jsonDecode(utf8.decode(dormResponse.bodyBytes));
-      final dormList = dormData is Map && dormData.containsKey('results') ? dormData['results'] : dormData;
+      final dormList =
+          dormData is Map && dormData.containsKey('results') ? dormData['results'] : dormData;
 
-      final evidenceResponse = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/evidence-types/"));
+      final evidenceResponse =
+          await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/evidence-types/"));
       final decoded = jsonDecode(utf8.decode(evidenceResponse.bodyBytes));
-      final evidenceList = decoded is Map && decoded.containsKey('results') ? decoded['results'] : decoded;
+      final evidenceList =
+          decoded is Map && decoded.containsKey('results') ? decoded['results'] : decoded;
 
       if (!mounted) return;
 
@@ -62,7 +67,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
 
   Future<void> submitApplication() async {
     if (selectedDormCost == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Выберите стоимость общежития")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Выберите стоимость общежития")));
       return;
     }
 
@@ -124,7 +130,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
               filled: true,
               fillColor: editable ? Colors.white : Colors.grey.shade200,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
             ),
           ),
         ],
@@ -175,9 +182,12 @@ class _ApplyScreenState extends State<ApplyScreen> {
             children: [
               TextSpan(
                 text: 'NARXOZ\n',
-                style: GoogleFonts.montserrat(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 20),
+                style: GoogleFonts.montserrat(
+                    color: Colors.red, fontWeight: FontWeight.bold, fontSize: 20),
               ),
-              TextSpan(text: 'Dorm Mate', style: GoogleFonts.montserrat(color: Colors.red, fontSize: 14)),
+              TextSpan(
+                  text: 'Dorm Mate',
+                  style: GoogleFonts.montserrat(color: Colors.red, fontSize: 14)),
             ],
           ),
           textAlign: TextAlign.center,
@@ -199,8 +209,10 @@ class _ApplyScreenState extends State<ApplyScreen> {
                     _buildTextField("Курс", studentData['course']?.toString() ?? ''),
                     _buildTextField("Дата рождения", studentData['birth_date'] ?? ''),
                     _buildTextField("Пол", studentData['gender'] == 'M' ? 'Мужской' : 'Женский'),
-                    _buildTextField("Телефон родителей", studentData['parent_phone'] ?? '', editable: true),
-                    _buildTextField("Результат ЕНТ", studentData['ent_result']?.toString() ?? '', editable: true),
+                    _buildTextField("Телефон родителей", studentData['parent_phone'] ?? '',
+                        editable: true),
+                    _buildTextField("Результат ЕНТ", studentData['ent_result']?.toString() ?? '',
+                        editable: true),
                     const Text(
                       "Загрузите ЕНТ сертификат в разделе \"Загрузить документы\", без этого сертификата ваш результат учитываться не будет",
                       style: TextStyle(fontSize: 12, color: Colors.grey),
@@ -213,7 +225,9 @@ class _ApplyScreenState extends State<ApplyScreen> {
                         border: OutlineInputBorder(),
                       ),
                       items: dormitoryPrices
-                          .map((cost) => DropdownMenuItem(value: cost, child: Text("$cost тг", style: GoogleFonts.montserrat())))
+                          .map((cost) => DropdownMenuItem(
+                              value: cost,
+                              child: Text("$cost тг", style: GoogleFonts.montserrat())))
                           .toList(),
                       onChanged: (value) => setState(() => selectedDormCost = value),
                     ),
@@ -241,31 +255,14 @@ class _ApplyScreenState extends State<ApplyScreen> {
                       ),
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : Text('Отправить заявку', style: GoogleFonts.montserrat(color: Colors.white)),
+                          : Text('Отправить заявку',
+                              style: GoogleFonts.montserrat(color: Colors.white)),
                     ),
                   ],
                 ),
               ),
             ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        onTap: (index) {
-          final routes = ['/home', '/apply', '/chat', '/notifications', '/profile'];
-          if (index < routes.length) {
-            Navigator.pushReplacementNamed(context, routes[index]);
-          }
-        },
-        selectedItemColor: Colors.red,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard_customize_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications_none_outlined), label: ''),
-          BottomNavigationBarItem(icon: CircleAvatar(radius: 12, backgroundImage: AssetImage('assets/avatar.png')), label: ''),
-        ],
-      ),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
     );
   }
 }

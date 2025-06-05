@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:file_picker/file_picker.dart';
+import '../widgets/bottom_navigation_bar.dart';
 
 class EditApplicationScreen extends StatefulWidget {
   @override
@@ -40,7 +41,8 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
       final resApp = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/application/"));
       final appData = jsonDecode(utf8.decode(resApp.bodyBytes));
 
-      final resEvidence = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/application/evidences/"));
+      final resEvidence =
+          await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/application/evidences/"));
       final evidencesRaw = jsonDecode(utf8.decode(resEvidence.bodyBytes));
       final evidences = evidencesRaw is Map && evidencesRaw.containsKey('results')
           ? List<Map<String, dynamic>>.from(evidencesRaw['results'])
@@ -83,7 +85,8 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
   }
 
   Future<void> pickFile(String code) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+    final result =
+        await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
     if (result != null && result.files.isNotEmpty) {
       final file = result.files.first;
       setState(() => documents[code] = file);
@@ -108,30 +111,30 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
       request.fields['parent_phone'] = parentPhoneCtrl.text;
       request.fields['ent_result'] = entResultCtrl.text;
 
-    documents.forEach((code, value) {
-  if (value is PlatformFile) {
-    if (value.bytes != null) {
-      // Web: используем bytes напрямую
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          code,
-          value.bytes!,
-          filename: value.name,
-        ),
-      );
-    } else if (value.path != null) {
-      // Mobile/Desktop: читаем файл с диска
-      final fileBytes = File(value.path!).readAsBytesSync();
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          code,
-          fileBytes,
-          filename: value.name,
-        ),
-      );
-    }
-  }
-});
+      documents.forEach((code, value) {
+        if (value is PlatformFile) {
+          if (value.bytes != null) {
+            // Web: используем bytes напрямую
+            request.files.add(
+              http.MultipartFile.fromBytes(
+                code,
+                value.bytes!,
+                filename: value.name,
+              ),
+            );
+          } else if (value.path != null) {
+            // Mobile/Desktop: читаем файл с диска
+            final fileBytes = File(value.path!).readAsBytesSync();
+            request.files.add(
+              http.MultipartFile.fromBytes(
+                code,
+                fileBytes,
+                filename: value.name,
+              ),
+            );
+          }
+        }
+      });
 
       if (removedDocs.isNotEmpty) {
         request.fields['deleted_documents'] = jsonEncode(removedDocs);
@@ -141,7 +144,8 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         Navigator.pushReplacementNamed(context, '/profile');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: ${response.statusCode}')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Ошибка: ${response.statusCode}')));
       }
     } catch (e) {
       debugPrint('Ошибка при отправке: $e');
@@ -179,7 +183,8 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
           labelStyle: GoogleFonts.montserrat(),
           filled: true,
           fillColor: Colors.grey.shade100,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         ),
       ),
     );
@@ -217,10 +222,12 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
                                   await launchUrl(url);
                                 }
                               },
-                              child: Text(file['name'], style: GoogleFonts.montserrat(color: Colors.blue)),
+                              child: Text(file['name'],
+                                  style: GoogleFonts.montserrat(color: Colors.blue)),
                             ),
                 ),
-                IconButton(onPressed: () => removeFile(code), icon: Icon(Icons.delete, color: Colors.red)),
+                IconButton(
+                    onPressed: () => removeFile(code), icon: Icon(Icons.delete, color: Colors.red)),
                 IconButton(onPressed: () => pickFile(code), icon: Icon(Icons.upload_file)),
               ],
             ),
@@ -231,12 +238,11 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
   }
 
   @override
-void dispose() {
-  parentPhoneCtrl.dispose();
-  entResultCtrl.dispose();
-  super.dispose();
-}
-
+  void dispose() {
+    parentPhoneCtrl.dispose();
+    entResultCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -267,9 +273,12 @@ void dispose() {
                       labelText: 'Ценовой диапазон',
                       filled: true,
                       fillColor: Colors.grey.shade100,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                     ),
-                    items: dormitoryPrices.map((cost) => DropdownMenuItem(value: cost, child: Text("$cost тг"))).toList(),
+                    items: dormitoryPrices
+                        .map((cost) => DropdownMenuItem(value: cost, child: Text("$cost тг")))
+                        .toList(),
                     onChanged: (val) => setState(() => selectedDormCost = val),
                   ),
                   const SizedBox(height: 20),
@@ -282,11 +291,13 @@ void dispose() {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       minimumSize: const Size.fromHeight(48),
                     ),
-                    child: Text("Сохранить изменения", style: GoogleFonts.montserrat(color: Colors.white)),
+                    child: Text("Сохранить изменения",
+                        style: GoogleFonts.montserrat(color: Colors.white)),
                   ),
                 ],
               ),
             ),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
     );
   }
 }
