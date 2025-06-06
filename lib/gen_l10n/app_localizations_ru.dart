@@ -221,4 +221,133 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get change => 'Изменить';
+
+  @override
+  String get upload_ent_certificate =>
+      'Пожалуйста, загрузите сертификат ЕНТ в разделе «Загрузить документы». Без этого сертификата ваш результат не будет засчитан.';
+
+  @override
+  String get upload => 'Загрузите';
+
+  @override
+  String get file_attached => 'Файл прикреплён';
+
+  @override
+  String get male => 'Мужской';
+
+  @override
+  String get gender => 'Пол';
+
+  @override
+  String get noNotifications => 'Нет новых уведомлений';
+
+  @override
+  String get markAsRead => 'Скрыть';
+
+  @override
+  String get dorm_info => 'Информация об общежитии';
+
+  @override
+  String get name_not_found => 'Без названия';
+
+  @override
+  String get description => 'Описание';
+
+  @override
+  String get description_not_found => 'Описание отсутствует';
+
+  @override
+  String get total_places => 'Количество мест';
+
+  @override
+  String get address_not_specified => 'Не указано';
+
+  @override
+  String get location_map => 'Карта расположения';
+
+  @override
+  String get open_map => 'Открыть карту';
+
+  @override
+  String get chatbot => 'ЧатБот';
+
+  @override
+  String get send_message_hint => 'Введите сообщение';
+
+  @override
+  String get end_chat => 'Завершить чат';
+
+  @override
+  String get question_not_found => 'Вопросы не найдены';
+
+  @override
+  String question_progress(Object current, Object total) {
+    return 'Вопрос $current из $total';
+  }
+
+  @override
+  String get submit_test => 'Отправить тест';
+
+  @override
+  String get please_answer_all => 'Пожалуйста, ответьте на все вопросы';
+
+  @override
+  String get test_success => 'Тест успешно отправлен!';
+
+  @override
+  String get main => 'Главная';
+
+  @override
+  String get confirm_logout => 'Вы уверены, что хотите выйти?';
+
+  @override
+  String get our_dormitories => 'Наши общежития';
+
+  @override
+  String get faq_q1 => 'Что входит в стоимость проживания?';
+
+  @override
+  String get faq_a1 =>
+      'Проживание, коммунальные услуги, пользование кухней и душем.';
+
+  @override
+  String get faq_q2 => 'Как долго можно проживать в Доме студентов?';
+
+  @override
+  String get faq_a2 =>
+      'На протяжении всего периода обучения при соблюдении правил.';
+
+  @override
+  String get faq_q3 => 'Кто может получить место в общежитии?';
+
+  @override
+  String get faq_a3 => 'Студенты, подавшие заявление и прошедшие отбор';
+
+  @override
+  String get faq_q4 => 'Как происходит процесс заселения?';
+
+  @override
+  String get faq_a4 =>
+      'Издается приказ и заключается договор аренды. Регистрация осуществляется через деканат. Самовольное заселение запрещено';
+
+  @override
+  String get faq_q5 => 'Как оплатить проживание?';
+
+  @override
+  String get faq_a5 =>
+      'Оплата производится через платежную систему университета или банк';
+
+  @override
+  String get faq_q6 => 'Какие правила необходимо соблюдать?';
+
+  @override
+  String get faq_a6 =>
+      'Соблюдать тишину, чистоту, уважение к соседям и имуществу';
+
+  @override
+  String get faq_q7 => 'Что будет, если правила будут нарушены?';
+
+  @override
+  String get faq_a7 =>
+      'Предупреждение, штраф или выселение в зависимости от тяжести';
 }

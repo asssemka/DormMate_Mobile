@@ -32,6 +32,8 @@ dependencies:
   flutter_image_slideshow: ^0.1.4
   animate_do: ^2.1.0
   intl: ^0.20.2
+  provider: ^6.0.0
+
 
 
 dev_dependencies:

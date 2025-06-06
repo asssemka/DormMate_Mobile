@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'welcome_screen.dart';
 
 class SplashScreen extends StatelessWidget {
-  final void Function(Locale)? onLanguageChanged;
+  final Function(Locale) onLanguageChanged;
+  final VoidCallback onToggleTheme;
+  final ThemeMode themeMode;
 
-  const SplashScreen({Key? key, this.onLanguageChanged}) : super(key: key);
+  const SplashScreen({
+    Key? key,
+    required this.onLanguageChanged,
+    required this.onToggleTheme,
+    required this.themeMode,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

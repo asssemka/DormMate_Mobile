@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http_parser/http_parser.dart';
 import '../widgets/bottom_navigation_bar.dart';
+import '../gen_l10n/app_localizations.dart';
 
 class ApplyScreen extends StatefulWidget {
   @override
@@ -30,8 +31,10 @@ class _ApplyScreenState extends State<ApplyScreen> {
   }
 
   Future<void> pickFile(String key) async {
-    final result =
-        await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
     if (result != null && result.files.isNotEmpty) {
       setState(() => documents[key] = result.files.first);
     }
@@ -47,8 +50,9 @@ class _ApplyScreenState extends State<ApplyScreen> {
       final dormList =
           dormData is Map && dormData.containsKey('results') ? dormData['results'] : dormData;
 
-      final evidenceResponse =
-          await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/evidence-types/"));
+      final evidenceResponse = await client.get(
+        Uri.parse("http://127.0.0.1:8000/api/v1/evidence-types/"),
+      );
       final decoded = jsonDecode(utf8.decode(evidenceResponse.bodyBytes));
       final evidenceList =
           decoded is Map && decoded.containsKey('results') ? decoded['results'] : decoded;
@@ -67,8 +71,9 @@ class _ApplyScreenState extends State<ApplyScreen> {
 
   Future<void> submitApplication() async {
     if (selectedDormCost == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Выберите стоимость общежития")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Выберите стоимость общежития")));
       return;
     }
 
@@ -90,12 +95,14 @@ class _ApplyScreenState extends State<ApplyScreen> {
 
       documents.forEach((key, file) {
         if (file.bytes != null) {
-          request.files.add(http.MultipartFile.fromBytes(
-            key,
-            file.bytes!,
-            filename: file.name,
-            contentType: MediaType('application', 'pdf'),
-          ));
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              key,
+              file.bytes!,
+              filename: file.name,
+              contentType: MediaType('application', 'pdf'),
+            ),
+          );
         }
       });
 
@@ -114,24 +121,33 @@ class _ApplyScreenState extends State<ApplyScreen> {
     }
   }
 
-  Widget _buildTextField(String label, String value, {bool editable = false}) {
+  /// Переработанный текстовый инпут с поддержкой темы
+  Widget _buildTextField(
+    String label,
+    String value,
+    Color textColor,
+    Color fillColor,
+    bool editable,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: GoogleFonts.montserrat(fontSize: 14)),
+          Text(label, style: GoogleFonts.montserrat(fontSize: 14, color: textColor)),
           const SizedBox(height: 6),
           TextFormField(
             initialValue: value,
             readOnly: !editable,
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.montserrat(color: textColor),
             decoration: InputDecoration(
               filled: true,
-              fillColor: editable ? Colors.white : Colors.grey.shade200,
+              fillColor: fillColor,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
         ],
@@ -139,7 +155,13 @@ class _ApplyScreenState extends State<ApplyScreen> {
     );
   }
 
-  Widget _buildFileUploadSection() {
+  /// Кастомизированный Upload (чтобы кнопки тоже были под темой)
+  Widget _buildFileUploadSectionWithTranslation(
+    AppLocalizations t,
+    bool isDark,
+    Color blockBg,
+    Color textMain,
+  ) {
     return AnimatedCrossFade(
       firstChild: const SizedBox.shrink(),
       secondChild: Column(
@@ -152,13 +174,18 @@ class _ApplyScreenState extends State<ApplyScreen> {
             child: ElevatedButton(
               onPressed: () => pickFile(code),
               style: ElevatedButton.styleFrom(
-                backgroundColor: file == null ? Colors.blue : Colors.green,
+                backgroundColor: file == null
+                    ? (isDark ? Colors.blueGrey : Colors.blue)
+                    : (isDark ? Colors.green.shade700 : Colors.green),
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 minimumSize: const Size.fromHeight(45),
               ),
               child: Text(
-                file == null ? "Загрузить $label" : "Файл прикреплён: ${file.name}",
-                style: GoogleFonts.montserrat(),
+                file == null
+                    ? "${t.upload} $label"
+                    : "${t.file_attached ?? 'Файл прикреплён'}: ${file.name}",
+                style: GoogleFonts.montserrat(color: Colors.white),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -172,10 +199,19 @@ class _ApplyScreenState extends State<ApplyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final mainBg = Theme.of(context).scaffoldBackgroundColor;
+    final blockBg = Theme.of(context).cardColor;
+    final textMain = isDark ? Colors.white : Colors.black87;
+    final textHint = isDark ? Colors.grey[300]! : Colors.grey[700]!;
+    final inputBg = isDark ? Color(0xFF22232A) : Colors.grey.shade200;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: mainBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: blockBg,
         elevation: 0,
         title: Text.rich(
           TextSpan(
@@ -183,51 +219,79 @@ class _ApplyScreenState extends State<ApplyScreen> {
               TextSpan(
                 text: 'NARXOZ\n',
                 style: GoogleFonts.montserrat(
-                    color: Colors.red, fontWeight: FontWeight.bold, fontSize: 20),
+                  color: Color(0xFFD50032),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
               ),
               TextSpan(
-                  text: 'Dorm Mate',
-                  style: GoogleFonts.montserrat(color: Colors.red, fontSize: 14)),
+                text: 'Dorm Mate',
+                style: GoogleFonts.montserrat(
+                    color: Color(0xFFD50032).withOpacity(0.85), fontSize: 14),
+              ),
             ],
           ),
           textAlign: TextAlign.center,
         ),
         centerTitle: true,
         automaticallyImplyLeading: false,
+        iconTheme: IconThemeData(color: Color(0xFFD50032)),
       ),
       body: studentData.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: DefaultTextStyle(
-                style: GoogleFonts.montserrat(),
+                style: GoogleFonts.montserrat(color: textMain),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildTextField("Имя", studentData['first_name'] ?? ''),
-                    _buildTextField("Фамилия", studentData['last_name'] ?? ''),
-                    _buildTextField("Курс", studentData['course']?.toString() ?? ''),
-                    _buildTextField("Дата рождения", studentData['birth_date'] ?? ''),
-                    _buildTextField("Пол", studentData['gender'] == 'M' ? 'Мужской' : 'Женский'),
-                    _buildTextField("Телефон родителей", studentData['parent_phone'] ?? '',
-                        editable: true),
-                    _buildTextField("Результат ЕНТ", studentData['ent_result']?.toString() ?? '',
-                        editable: true),
-                    const Text(
-                      "Загрузите ЕНТ сертификат в разделе \"Загрузить документы\", без этого сертификата ваш результат учитываться не будет",
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    _buildTextField(
+                        t.first_name, studentData['first_name'] ?? '', textMain, inputBg, false),
+                    _buildTextField(
+                        t.last_name, studentData['last_name'] ?? '', textMain, inputBg, false),
+                    _buildTextField(t.course, studentData['course']?.toString() ?? '', textMain,
+                        inputBg, false),
+                    _buildTextField(
+                        t.parent_phone, studentData['parent_phone'] ?? '', textMain, inputBg, true),
+                    _buildTextField(t.ent_result, studentData['ent_result']?.toString() ?? '',
+                        textMain, inputBg, true),
+                    _buildTextField(
+                        t.gender,
+                        studentData['gender'] == 'M' ? t.male ?? 'Мужской' : t.female,
+                        textMain,
+                        inputBg,
+                        false),
+                    _buildTextField(t.dorm_price_10_months, studentData['birth_date'] ?? '',
+                        textMain, inputBg, false),
+                    Text(
+                      t.upload_ent_certificate ??
+                          "Загрузите ЕНТ сертификат в разделе \"Загрузить документы\", без этого сертификата ваш результат учитываться не будет",
+                      style: GoogleFonts.montserrat(
+                          fontSize: 12, color: textHint, fontWeight: FontWeight.w400),
                     ),
                     const SizedBox(height: 20),
                     DropdownButtonFormField<String>(
                       value: selectedDormCost,
-                      decoration: const InputDecoration(
-                        labelText: 'Ценовой диапазон',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: t.dorm_price_10_months,
+                        labelStyle: GoogleFonts.montserrat(color: textMain),
+                        filled: true,
+                        fillColor: inputBg,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
+                      dropdownColor: blockBg,
                       items: dormitoryPrices
-                          .map((cost) => DropdownMenuItem(
+                          .map(
+                            (cost) => DropdownMenuItem(
                               value: cost,
-                              child: Text("$cost тг", style: GoogleFonts.montserrat())))
+                              child:
+                                  Text("$cost тг", style: GoogleFonts.montserrat(color: textMain)),
+                            ),
+                          )
                           .toList(),
                       onChanged: (value) => setState(() => selectedDormCost = value),
                     ),
@@ -235,28 +299,29 @@ class _ApplyScreenState extends State<ApplyScreen> {
                     ElevatedButton(
                       onPressed: () => setState(() => showDocuments = !showDocuments),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: Color(0xFFD50032),
+                        foregroundColor: Colors.white,
                         shape: const StadiumBorder(),
                         minimumSize: const Size.fromHeight(48),
                       ),
                       child: Text(
-                        showDocuments ? "Скрыть документы" : "Загрузить документы",
+                        showDocuments ? t.hide : t.show,
                         style: GoogleFonts.montserrat(color: Colors.white),
                       ),
                     ),
-                    _buildFileUploadSection(),
+                    _buildFileUploadSectionWithTranslation(t, isDark, blockBg, textMain),
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: isLoading ? null : submitApplication,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
                         shape: const StadiumBorder(),
                         minimumSize: const Size.fromHeight(48),
                       ),
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : Text('Отправить заявку',
-                              style: GoogleFonts.montserrat(color: Colors.white)),
+                          : Text(t.submit, style: GoogleFonts.montserrat(color: Colors.white)),
                     ),
                   ],
                 ),

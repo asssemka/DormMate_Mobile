@@ -19,7 +19,7 @@ import 'app_localizations_ru.dart';
 /// `supportedLocales` list. For example:
 ///
 /// ```dart
-/// import 'l10n/app_localizations.dart';
+/// import 'gen_l10n/app_localizations.dart';
 ///
 /// return MaterialApp(
 ///   localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -409,13 +409,13 @@ abstract class AppLocalizations {
   /// No description provided for @faq.
   ///
   /// In en, this message translates to:
-  /// **'Frequently Asked Questions'**
+  /// **'Frequently asked questions'**
   String get faq;
 
   /// No description provided for @useful_info_students.
   ///
   /// In en, this message translates to:
-  /// **'Useful for Students'**
+  /// **'Useful for students'**
   String get useful_info_students;
 
   /// No description provided for @select_language.
@@ -525,6 +525,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Change'**
   String get change;
+
+  /// No description provided for @upload_ent_certificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload the Unified National Testing certificate in the \'Upload Documents\' section. Without this certificate your result will not be counted.'**
+  String get upload_ent_certificate;
+
+  /// No description provided for @upload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get upload;
+
+  /// No description provided for @file_attached.
+  ///
+  /// In en, this message translates to:
+  /// **'File attached'**
+  String get file_attached;
+
+  /// No description provided for @male.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get male;
+
+  /// No description provided for @gender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get gender;
+
+  /// No description provided for @noNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications'**
+  String get noNotifications;
+
+  /// No description provided for @markAsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get markAsRead;
+
+  /// No description provided for @dorm_info.
+  ///
+  /// In en, this message translates to:
+  /// **'Dormitory Information'**
+  String get dorm_info;
+
+  /// No description provided for @name_not_found.
+  ///
+  /// In en, this message translates to:
+  /// **'No name'**
+  String get name_not_found;
+
+  /// No description provided for @description.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get description;
+
+  /// No description provided for @description_not_found.
+  ///
+  /// In en, this message translates to:
+  /// **'No description available'**
+  String get description_not_found;
+
+  /// No description provided for @total_places.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of places'**
+  String get total_places;
+
+  /// No description provided for @address_not_specified.
+  ///
+  /// In en, this message translates to:
+  /// **'Not specified'**
+  String get address_not_specified;
+
+  /// No description provided for @location_map.
+  ///
+  /// In en, this message translates to:
+  /// **'Location map'**
+  String get location_map;
+
+  /// No description provided for @open_map.
+  ///
+  /// In en, this message translates to:
+  /// **'Open map'**
+  String get open_map;
+
+  /// No description provided for @chatbot.
+  ///
+  /// In en, this message translates to:
+  /// **'ChatBot'**
+  String get chatbot;
+
+  /// No description provided for @send_message_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter message'**
+  String get send_message_hint;
+
+  /// No description provided for @end_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'End Chat'**
+  String get end_chat;
+
+  /// No description provided for @question_not_found.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions not found'**
+  String get question_not_found;
+
+  /// No description provided for @question_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {current} of {total}'**
+  String question_progress(Object current, Object total);
+
+  /// No description provided for @submit_test.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Test'**
+  String get submit_test;
+
+  /// No description provided for @please_answer_all.
+  ///
+  /// In en, this message translates to:
+  /// **'Please answer all questions'**
+  String get please_answer_all;
+
+  /// No description provided for @test_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Test submitted successfully!'**
+  String get test_success;
+
+  /// No description provided for @main.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get main;
+
+  /// No description provided for @confirm_logout.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to log out?'**
+  String get confirm_logout;
+
+  /// No description provided for @our_dormitories.
+  ///
+  /// In en, this message translates to:
+  /// **'Our dormitories'**
+  String get our_dormitories;
+
+  /// No description provided for @faq_q1.
+  ///
+  /// In en, this message translates to:
+  /// **'What is included in the cost of accommodation?'**
+  String get faq_q1;
+
+  /// No description provided for @faq_a1.
+  ///
+  /// In en, this message translates to:
+  /// **'Accommodation, utilities, use of kitchen and shower.'**
+  String get faq_a1;
+
+  /// No description provided for @faq_q2.
+  ///
+  /// In en, this message translates to:
+  /// **'How long can you stay in the Students\' House?'**
+  String get faq_q2;
+
+  /// No description provided for @faq_a2.
+  ///
+  /// In en, this message translates to:
+  /// **'For the entire period of study, subject to the rules.'**
+  String get faq_a2;
+
+  /// No description provided for @faq_q3.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can get a dormitory place?'**
+  String get faq_q3;
+
+  /// No description provided for @faq_a3.
+  ///
+  /// In en, this message translates to:
+  /// **'Students who have applied and passed the selection.'**
+  String get faq_a3;
+
+  /// No description provided for @faq_q4.
+  ///
+  /// In en, this message translates to:
+  /// **'How is the settlement process?'**
+  String get faq_q4;
+
+  /// No description provided for @faq_a4.
+  ///
+  /// In en, this message translates to:
+  /// **'An order is issued and a rental agreement is concluded. Registration is done through the dean\'s office. Unauthorized settlement is prohibited.'**
+  String get faq_a4;
+
+  /// No description provided for @faq_q5.
+  ///
+  /// In en, this message translates to:
+  /// **'How can I pay for accommodation?'**
+  String get faq_q5;
+
+  /// No description provided for @faq_a5.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment is made through the university payment system or bank.'**
+  String get faq_a5;
+
+  /// No description provided for @faq_q6.
+  ///
+  /// In en, this message translates to:
+  /// **'What rules must I follow?'**
+  String get faq_q6;
+
+  /// No description provided for @faq_a6.
+  ///
+  /// In en, this message translates to:
+  /// **'Observe silence, cleanliness, respect for neighbors and property.'**
+  String get faq_a6;
+
+  /// No description provided for @faq_q7.
+  ///
+  /// In en, this message translates to:
+  /// **'What happens if the rules are violated?'**
+  String get faq_q7;
+
+  /// No description provided for @faq_a7.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning, fine, or eviction depending on the severity.'**
+  String get faq_a7;
 }
 
 class _AppLocalizationsDelegate

@@ -163,10 +163,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profile => 'Profile';
 
   @override
-  String get faq => 'Frequently Asked Questions';
+  String get faq => 'Frequently asked questions';
 
   @override
-  String get useful_info_students => 'Useful for Students';
+  String get useful_info_students => 'Useful for students';
 
   @override
   String get select_language => 'Select Language';
@@ -221,4 +221,130 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get change => 'Change';
+
+  @override
+  String get upload_ent_certificate =>
+      'Please upload the Unified National Testing certificate in the \'Upload Documents\' section. Without this certificate your result will not be counted.';
+
+  @override
+  String get upload => 'Upload';
+
+  @override
+  String get file_attached => 'File attached';
+
+  @override
+  String get male => 'Male';
+
+  @override
+  String get gender => 'Gender';
+
+  @override
+  String get noNotifications => 'No notifications';
+
+  @override
+  String get markAsRead => 'Hide';
+
+  @override
+  String get dorm_info => 'Dormitory Information';
+
+  @override
+  String get name_not_found => 'No name';
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get description_not_found => 'No description available';
+
+  @override
+  String get total_places => 'Number of places';
+
+  @override
+  String get address_not_specified => 'Not specified';
+
+  @override
+  String get location_map => 'Location map';
+
+  @override
+  String get open_map => 'Open map';
+
+  @override
+  String get chatbot => 'ChatBot';
+
+  @override
+  String get send_message_hint => 'Enter message';
+
+  @override
+  String get end_chat => 'End Chat';
+
+  @override
+  String get question_not_found => 'Questions not found';
+
+  @override
+  String question_progress(Object current, Object total) {
+    return 'Question $current of $total';
+  }
+
+  @override
+  String get submit_test => 'Submit Test';
+
+  @override
+  String get please_answer_all => 'Please answer all questions';
+
+  @override
+  String get test_success => 'Test submitted successfully!';
+
+  @override
+  String get main => 'Home';
+
+  @override
+  String get confirm_logout => 'Are you sure you want to log out?';
+
+  @override
+  String get our_dormitories => 'Our dormitories';
+
+  @override
+  String get faq_q1 => 'What is included in the cost of accommodation?';
+
+  @override
+  String get faq_a1 => 'Accommodation, utilities, use of kitchen and shower.';
+
+  @override
+  String get faq_q2 => 'How long can you stay in the Students\' House?';
+
+  @override
+  String get faq_a2 => 'For the entire period of study, subject to the rules.';
+
+  @override
+  String get faq_q3 => 'Who can get a dormitory place?';
+
+  @override
+  String get faq_a3 => 'Students who have applied and passed the selection.';
+
+  @override
+  String get faq_q4 => 'How is the settlement process?';
+
+  @override
+  String get faq_a4 =>
+      'An order is issued and a rental agreement is concluded. Registration is done through the dean\'s office. Unauthorized settlement is prohibited.';
+
+  @override
+  String get faq_q5 => 'How can I pay for accommodation?';
+
+  @override
+  String get faq_a5 =>
+      'Payment is made through the university payment system or bank.';
+
+  @override
+  String get faq_q6 => 'What rules must I follow?';
+
+  @override
+  String get faq_a6 =>
+      'Observe silence, cleanliness, respect for neighbors and property.';
+
+  @override
+  String get faq_q7 => 'What happens if the rules are violated?';
+
+  @override
+  String get faq_a7 => 'Warning, fine, or eviction depending on the severity.';
 }

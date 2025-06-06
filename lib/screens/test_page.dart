@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/api.dart';
+import '../gen_l10n/app_localizations.dart';
 
 class TestPage extends StatefulWidget {
   const TestPage({Key? key}) : super(key: key);
@@ -32,9 +33,8 @@ class _TestPageState extends State<TestPage> {
       );
       if (response.statusCode == 200) {
         final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-        final List<dynamic> list = decoded is List
-            ? decoded
-            : (decoded['results'] as List<dynamic>? ?? []);
+        final List<dynamic> list =
+            decoded is List ? decoded : (decoded['results'] as List<dynamic>? ?? []);
         setState(() {
           questions = List<Map<String, dynamic>>.from(list);
         });
@@ -97,12 +97,17 @@ class _TestPageState extends State<TestPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = theme.scaffoldBackgroundColor;
+    final cardColor = theme.cardColor;
+    final textColor = isDark ? Colors.white : Colors.black87;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F6F6),
+      backgroundColor: bgColor,
       appBar: AppBar(
-        title: Text('Психологический тест', style: GoogleFonts.montserrat()),
+        title: Text(t.psychological_test, style: GoogleFonts.montserrat()),
         backgroundColor: const Color(0xFFD50032),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -110,60 +115,51 @@ class _TestPageState extends State<TestPage> {
       body: loading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFFD50032)))
           : questions.isEmpty
-              ? const Center(child: Text('Вопросы не найдены'))
+              ? Center(child: Text(t.question_not_found))
               : Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Прогресс теста
                       Text(
-                        'Вопрос ${currentIndex + 1} из ${questions.length}',
+                        t.question_progress(currentIndex + 1, questions.length),
                         style: GoogleFonts.montserrat(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.grey.shade800,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
+                      // Карточка вопроса
                       Container(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(22),
+                        width: double.infinity,
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(18),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 8,
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 12,
                               offset: const Offset(0, 4),
-                            ),
+                            )
                           ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              questions[currentIndex]['question_text'] ?? '',
-                              style: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.w600),
+                              questions[currentIndex]['text'] ?? '',
+                              style: GoogleFonts.montserrat(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 17,
+                                color: textColor,
+                              ),
                             ),
-                            const SizedBox(height: 20),
-                            ...['A', 'B', 'C'].where((k) => questions[currentIndex]['answer_variant_${k.toLowerCase()}'] != null && questions[currentIndex]['answer_variant_${k.toLowerCase()}'].toString().isNotEmpty).map((k) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: RadioListTile<String>(
-                                  value: k,
-                                  groupValue: answers[currentIndex],
-                                  onChanged: (v) => setState(() => answers[currentIndex] = v!),
-                                  title: Text(
-                                    questions[currentIndex]['answer_variant_${k.toLowerCase()}'],
-                                    style: GoogleFonts.montserrat(fontSize: 16),
-                                  ),
-                                  activeColor: const Color(0xFFD50032),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  tileColor: Colors.grey.shade100,
-                                  selectedTileColor: const Color(0xFFFFEDEE),
-                                ),
-                              );
-                            }).toList(),
+                            const SizedBox(height: 18),
+                            ..._buildAnswerOptions(questions[currentIndex], currentIndex, textColor,
+                                cardColor, isDark),
                           ],
                         ),
                       ),
@@ -172,14 +168,16 @@ class _TestPageState extends State<TestPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           ElevatedButton(
-                            onPressed: currentIndex == 0 ? null : () => setState(() => currentIndex--),
+                            onPressed:
+                                currentIndex == 0 ? null : () => setState(() => currentIndex--),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.grey.shade300,
                               foregroundColor: Colors.black87,
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape:
+                                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            child: const Text('Назад'),
+                            child: Text(t.back),
                           ),
                           ElevatedButton(
                             onPressed: submitting ? null : handleNext,
@@ -187,7 +185,8 @@ class _TestPageState extends State<TestPage> {
                               backgroundColor: const Color(0xFFD50032),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape:
+                                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                             child: submitting
                                 ? const SizedBox(
@@ -199,7 +198,7 @@ class _TestPageState extends State<TestPage> {
                                     ),
                                   )
                                 : Text(
-                                    currentIndex == questions.length - 1 ? 'Отправить тест' : 'Далее',
+                                    currentIndex == questions.length - 1 ? t.submit_test : t.next,
                                     style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
                                   ),
                           ),
@@ -208,6 +207,53 @@ class _TestPageState extends State<TestPage> {
                     ],
                   ),
                 ),
+    );
+  }
+
+  List<Widget> _buildAnswerOptions(Map<String, dynamic> question, int questionIdx, Color textColor,
+      Color cardColor, bool isDark) {
+    final answersList = question['answers'] ?? [];
+    return List<Widget>.generate(
+      answersList.length,
+      (i) {
+        final answerText = answersList[i].toString();
+        final isSelected = answers[questionIdx] == answerText;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: Material(
+            color: isSelected ? (isDark ? Colors.red[400] : const Color(0xFFD50032)) : cardColor,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => setState(() => answers[questionIdx] = answerText),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                child: Row(
+                  children: [
+                    Icon(
+                      isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? Colors.grey[400] : Colors.grey[700]),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        answerText,
+                        style: GoogleFonts.montserrat(
+                          color: isSelected ? Colors.white : textColor,
+                          fontSize: 16,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
