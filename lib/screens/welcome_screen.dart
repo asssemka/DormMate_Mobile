@@ -8,8 +8,13 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Получаем текущие цвета из темы
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final textColor =
+        Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -28,6 +33,8 @@ class WelcomeScreen extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                         color: const Color(0xFFD50032),
                         letterSpacing: 1.2,
+                        // используем textColor если хочешь изменить цвет текста в тёмной теме
+                        // color: textColor,
                       ),
                     ),
                     SizedBox(height: 40.h),
@@ -39,7 +46,7 @@ class WelcomeScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         elevation: 6,
-                        shadowColor: Colors.redAccent.withOpacity(0.5),
+                        shadowColor: const Color(0xFFD50032).withOpacity(0.25),
                       ),
                       onPressed: () {
                         Navigator.push(

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import '../services/api.dart';
 import '../widgets/bottom_navigation_bar.dart';
+import '../gen_l10n/app_localizations.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final VoidCallback? onOpenChat;
@@ -74,32 +75,41 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final bg = theme.scaffoldBackgroundColor;
+    final card = theme.cardColor;
+    final textMain = isDark ? Colors.white : Colors.black87;
+    final textSub = isDark ? Colors.grey[400]! : Colors.grey.shade600;
+    final divider = isDark ? Colors.grey[800]! : Colors.grey.shade300;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: card,
         elevation: 0,
         title: Text(
-          'Уведомления',
+          t.notifications,
           style: GoogleFonts.montserrat(
-            color: Colors.black87,
+            color: textMain,
             fontWeight: FontWeight.w700,
             fontSize: 22,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textMain),
           onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false),
           splashRadius: 22,
-          tooltip: 'Назад',
+          tooltip: t.back,
         ),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: isLoading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFFD50032)))
+            ? Center(child: CircularProgressIndicator(color: Color(0xFFD50032)))
             : error != null
                 ? Center(
                     child: Text(
@@ -115,10 +125,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 : notifications.isEmpty
                     ? Center(
                         child: Text(
-                          'Нет новых уведомлений',
+                          t.noNotifications,
                           style: GoogleFonts.montserrat(
                             fontSize: 16,
-                            color: Colors.grey.shade600,
+                            color: textSub,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -131,11 +141,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           final n = notifications[index];
                           return Container(
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
+                              color: card,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.grey.shade300,
+                                  color: divider.withOpacity(0.18),
                                   blurRadius: 6,
                                   offset: const Offset(0, 3),
                                 ),
@@ -148,11 +158,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFD50032).withOpacity(0.1),
+                                    color: const Color(0xFFD50032).withOpacity(0.13),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.notifications,
-                                      color: Color(0xFFD50032), size: 26),
+                                  child:
+                                      Icon(Icons.notifications, color: Color(0xFFD50032), size: 26),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
@@ -164,7 +174,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         style: GoogleFonts.montserrat(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
+                                          color: textMain,
                                         ),
                                       ),
                                       const SizedBox(height: 6),
@@ -172,7 +182,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         _formatTime(n['created_at'] ?? ''),
                                         style: GoogleFonts.montserrat(
                                           fontSize: 13,
-                                          color: Colors.grey.shade600,
+                                          color: textSub,
                                         ),
                                       ),
                                     ],
@@ -184,14 +194,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     TextButton(
                                       onPressed: () => _openChat(n['id']),
                                       style: TextButton.styleFrom(
-                                        foregroundColor: const Color(0xFFD50032),
+                                        foregroundColor: Color(0xFFD50032),
                                         padding:
                                             const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         minimumSize: Size.zero,
                                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       ),
                                       child: Text(
-                                        'Чат',
+                                        t.chat,
                                         style: GoogleFonts.montserrat(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 14,
@@ -201,14 +211,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     TextButton(
                                       onPressed: () => _markAsRead(n['id']),
                                       style: TextButton.styleFrom(
-                                        foregroundColor: Colors.grey.shade600,
+                                        foregroundColor: textSub,
                                         padding:
                                             const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         minimumSize: Size.zero,
                                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       ),
                                       child: Text(
-                                        'Скрыть',
+                                        t.markAsRead,
                                         style: GoogleFonts.montserrat(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 14,

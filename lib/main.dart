@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'l10n/app_localizations.dart';
+import 'gen_l10n/app_localizations.dart';
 
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -26,10 +26,17 @@ class DormMateApp extends StatefulWidget {
 
 class _DormMateAppState extends State<DormMateApp> {
   Locale _locale = const Locale('ru'); // Или бери из SharedPreferences при старте
+  ThemeMode _themeMode = ThemeMode.light;
 
   void _changeLanguage(Locale newLocale) {
     setState(() {
       _locale = newLocale;
+    });
+  }
+
+  void _toggleTheme() {
+    setState(() {
+      _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     });
   }
 
@@ -42,24 +49,43 @@ class _DormMateAppState extends State<DormMateApp> {
       builder: (context, child) {
         return MaterialApp(
           locale: _locale,
+          themeMode: _themeMode,
+          theme: ThemeData(
+            brightness: Brightness.light,
+            fontFamily: 'Montserrat',
+            scaffoldBackgroundColor: Colors.white,
+            appBarTheme: const AppBarTheme(backgroundColor: Color(0xFFD50032)),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                textStyle: const TextStyle(fontFamily: 'Montserrat'),
+              ),
+            ),
+          ),
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+            fontFamily: 'Montserrat',
+            scaffoldBackgroundColor: const Color(0xFF181818),
+            appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF222222)),
+          ),
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          supportedLocales: const [
-            Locale('en'),
-            Locale('ru'),
-            Locale('kk'),
-          ],
+          supportedLocales: const [Locale('en'), Locale('ru'), Locale('kk')],
           debugShowCheckedModeBanner: false,
           initialRoute: '/',
           routes: {
-            '/': (context) => SplashScreen(onLanguageChanged: _changeLanguage),
-            '/profile': (context) => ProfileScreen(onLanguageChanged: _changeLanguage),
-            // '/': (context) => SplashScreen(),
-            '/home': (context) => HomePage(),
+            '/': (context) => SplashScreen(
+                onLanguageChanged: _changeLanguage,
+                onToggleTheme: _toggleTheme,
+                themeMode: _themeMode),
+            '/profile': (context) => ProfileScreen(
+                onLanguageChanged: _changeLanguage,
+                onToggleTheme: _toggleTheme,
+                themeMode: _themeMode),
+            '/home': (context) => HomePage(onToggleTheme: _toggleTheme, themeMode: _themeMode),
             '/login': (context) => const LoginScreen(),
             '/chat': (context) => StudentChatScreen(),
             '/apply': (context) => ApplyScreen(),
@@ -77,9 +103,7 @@ class _DormMateAppState extends State<DormMateApp> {
               final idString = settings.name!.split('/').last;
               final id = int.tryParse(idString);
               if (id != null) {
-                return MaterialPageRoute(
-                  builder: (_) => DormDetailPage(dormId: id),
-                );
+                return MaterialPageRoute(builder: (_) => DormDetailPage(dormId: id));
               }
             }
             return null;

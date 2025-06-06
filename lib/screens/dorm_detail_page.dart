@@ -1,12 +1,13 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_image_slideshow/flutter_image_slideshow.dart';
-import 'package:animate_do/animate_do.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/bottom_navigation_bar.dart';
+import '../gen_l10n/app_localizations.dart';
+import '../widgets/html_iframe.dart';
 
 class DormDetailPage extends StatefulWidget {
   final int dormId;
@@ -30,14 +31,6 @@ class _DormDetailPageState extends State<DormDetailPage> {
     fetchDorm();
   }
 
-  void registerMapIframe(String viewType, String url) {
-    // Для Web можем оставить пустым или с print. Для mobile не нужен.
-    if (kIsWeb) {
-      // Просто заглушка
-      print('Registering iframe: $viewType -> $url');
-    }
-  }
-
   Future<void> fetchDorm() async {
     try {
       final response = await http.get(
@@ -46,13 +39,11 @@ class _DormDetailPageState extends State<DormDetailPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-
         if (kIsWeb && data['address'] != null) {
           final encoded = Uri.encodeComponent(data['address']);
           final url = 'https://yandex.kz/map-widget/v1/?text=$encoded&z=17.19';
           registerMapIframe(viewType, url);
         }
-
         if (!mounted) return;
         setState(() {
           dorm = data;
@@ -72,16 +63,24 @@ class _DormDetailPageState extends State<DormDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final defaultImage = 'assets/banner.png';
+    final t = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final bgColor = theme.scaffoldBackgroundColor;
+    final cardColor = theme.cardColor;
+    final mainText = isDark ? Colors.white : Colors.black87;
+    final subText = isDark ? Colors.grey[400]! : Colors.black54;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F6F6),
+      backgroundColor: bgColor,
       appBar: AppBar(
-        title: Text('Информация об общежитии', style: GoogleFonts.montserrat()),
-        backgroundColor: const Color(0xFFD50032),
+        title: Text(t.dorm_info, style: GoogleFonts.montserrat(color: mainText)),
+        backgroundColor:
+            theme.appBarTheme.backgroundColor ?? (isDark ? Color(0xFF232323) : Color(0xFFD50032)),
         foregroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -89,63 +88,121 @@ class _DormDetailPageState extends State<DormDetailPage> {
           ? const Center(child: CircularProgressIndicator())
           : error != null
               ? Center(child: Text(error!))
-              : FadeInUp(
-                  duration: const Duration(milliseconds: 500),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          dorm!['name'] ?? 'Без названия',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFFD50032),
-                          ),
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        dorm?['name'] ?? t.name_not_found,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Color(0xFFD50032).withOpacity(0.85) : Color(0xFFD50032),
                         ),
-                        const SizedBox(height: 20),
-                        _buildImageSlideshow(dorm!['images']),
-                        const SizedBox(height: 24),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildImageSlideshow(dorm?['images']),
+                      const SizedBox(height: 24),
+                      _buildCardSection([
+                        _infoRow(
+                          t.description,
+                          dorm?['description'] ?? t.description_not_found,
+                          mainText,
+                          subText,
+                        ),
+                        _infoRow(
+                          t.dorm_price_10_months,
+                          '${dorm?['cost'] ?? '-'} ₸',
+                          mainText,
+                          subText,
+                        ),
+                        _infoRow(
+                          t.total_places,
+                          '${dorm?['total_places'] ?? '-'}',
+                          mainText,
+                          subText,
+                        ),
+                        _infoRow(
+                          t.address,
+                          dorm?['address'] ?? t.address_not_specified,
+                          mainText,
+                          subText,
+                        ),
+                      ], cardColor),
+                      const SizedBox(height: 24),
+                      if (dorm?['address'] != null)
                         _buildCardSection([
-                          _infoRow('Описание', dorm!['description'] ?? 'Описание отсутствует'),
-                          _infoRow('Стоимость за 10 месяцев', '${dorm!['cost']} ₸'),
-                          _infoRow('Количество мест', '${dorm!['total_places']}'),
-                          _infoRow('Адрес', dorm!['address'] ?? 'Не указано'),
-                        ]),
-                        const SizedBox(height: 24),
-                        if (dorm!['address'] != null)
-                          _buildCardSection([
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 12),
-                              child: Text(
-                                'Карта расположения',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Text(
+                              t.location_map,
+                              style: GoogleFonts.montserrat(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: mainText,
                               ),
                             ),
+                          ),
+                          if (kIsWeb)
+                            SizedBox(
+                              height: 300,
+                              child: buildMapIframe(viewType),
+                            ),
+                          if (!kIsWeb)
                             ElevatedButton.icon(
                               onPressed: () {
                                 final encoded = Uri.encodeComponent(dorm!['address']);
                                 final mapUrl = 'https://yandex.kz/maps/?text=$encoded';
                                 launchUrl(Uri.parse(mapUrl));
                               },
-                              icon: const Icon(Icons.map),
-                              label: const Text('Открыть карту'),
+                              icon: const Icon(Icons.map, color: Colors.white),
+                              label: Text(
+                                t.open_map,
+                                style: GoogleFonts.montserrat(color: Colors.white),
+                              ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
+                                backgroundColor: Color(0xFFD50032),
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                 shape:
                                     RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                             ),
-                          ]),
-                      ],
-                    ),
+                        ], cardColor),
+                      const SizedBox(height: 16),
+                      if (dorm != null)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/apply',
+                                arguments: {
+                                  'dorm_id': dorm!['id'],
+                                  'dorm_cost': dorm!['cost'],
+                                  'dorm_name': dorm!['name'],
+                                },
+                              );
+                            },
+                            icon: const Icon(Icons.assignment_turned_in, color: Colors.white),
+                            label: Text(
+                              t.apply_now,
+                              style: GoogleFonts.montserrat(
+                                  fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFFD50032),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              textStyle: GoogleFonts.montserrat(fontSize: 18),
+                              shape:
+                                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
       bottomNavigationBar: const BottomNavBar(currentIndex: 0),
@@ -163,8 +220,8 @@ class _DormDetailPageState extends State<DormDetailPage> {
         width: double.infinity,
         height: 220,
         initialPage: 0,
-        indicatorColor: Colors.red,
-        indicatorBackgroundColor: Colors.grey.shade300,
+        indicatorColor: Color(0xFFD50032),
+        indicatorBackgroundColor: Colors.grey,
         autoPlayInterval: 3000,
         isLoop: true,
         children: images.map((url) {
@@ -178,7 +235,7 @@ class _DormDetailPageState extends State<DormDetailPage> {
     );
   }
 
-  Widget _infoRow(String title, String value) {
+  Widget _infoRow(String title, String value, Color main, Color sub) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
@@ -189,7 +246,7 @@ class _DormDetailPageState extends State<DormDetailPage> {
             style: GoogleFonts.montserrat(
               fontSize: 15.5,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+              color: main,
             ),
           ),
           const SizedBox(height: 6),
@@ -197,7 +254,7 @@ class _DormDetailPageState extends State<DormDetailPage> {
             value,
             style: GoogleFonts.montserrat(
               fontSize: 15,
-              color: Colors.black54,
+              color: sub,
             ),
           ),
         ],
@@ -205,13 +262,13 @@ class _DormDetailPageState extends State<DormDetailPage> {
     );
   }
 
-  Widget _buildCardSection(List<Widget> children) {
+  Widget _buildCardSection(List<Widget> children, Color cardColor) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

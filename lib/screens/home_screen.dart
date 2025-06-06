@@ -5,9 +5,17 @@ import '../services/api.dart';
 import '../widgets/banner_carousel.dart';
 import '../widgets/useful_info_page.dart';
 import '../widgets/bottom_navigation_bar.dart';
+import '../gen_l10n/app_localizations.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  final VoidCallback onToggleTheme;
+  final ThemeMode themeMode;
+
+  const HomePage({
+    Key? key,
+    required this.onToggleTheme,
+    required this.themeMode,
+  }) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -15,7 +23,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> _dorms = [];
-  String? pdfUrl;
 
   @override
   void initState() {
@@ -32,14 +39,14 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  PreferredSizeWidget _buildHeader() => AppBar(
-        backgroundColor: Colors.white,
+  PreferredSizeWidget _buildHeader(BuildContext context) => AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: Builder(
           builder: (ctx) => IconButton(
             icon: const Icon(Icons.menu, color: Color(0xFFD50032), size: 28),
             onPressed: () => Scaffold.of(ctx).openDrawer(),
-            tooltip: 'Меню',
+            tooltip: AppLocalizations.of(context)!.menu,
           ),
         ),
         title: Text(
@@ -47,66 +54,112 @@ class _HomePageState extends State<HomePage> {
           style: GoogleFonts.montserrat(
             fontSize: 26,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFFD50032),
+            color: Color(0xFFD50032),
             letterSpacing: 1.2,
           ),
         ),
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(
+        //       widget.themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode,
+        //       color: Theme.of(context).iconTheme.color,
+        //     ),
+        //     tooltip: widget.themeMode == ThemeMode.dark ? "Светлая тема" : "Тёмная тема",
+        //     onPressed: widget.onToggleTheme,
+        //   ),
+        // ],
         centerTitle: true,
       );
 
-  Drawer _buildDrawer(BuildContext ctx) => Drawer(
-        child: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              DrawerHeader(
-                decoration: const BoxDecoration(color: Color(0xFFD50032)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.account_circle, color: Colors.white, size: 50),
-                    const SizedBox(height: 12),
-                    Text('Меню',
-                        style: GoogleFonts.montserrat(
-                            fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-                  ],
-                ),
+  Drawer _buildDrawer(BuildContext ctx) {
+    final t = AppLocalizations.of(ctx)!;
+    final isDark = Theme.of(ctx).brightness == Brightness.dark;
+    return Drawer(
+      child: SafeArea(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xFFD50032)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.account_circle, color: Colors.white, size: 50),
+                  const SizedBox(height: 12),
+                  Text(
+                    t.menu,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
-              ListTile(
-                leading: const Icon(Icons.home, color: Color(0xFFD50032)),
-                title: const Text('Главная'),
-                onTap: () => Navigator.pushReplacementNamed(ctx, '/home'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home, color: Color(0xFFD50032)),
+              title: Text(
+                t.home,
+                style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w500),
               ),
-              ListTile(
-                leading: const Icon(Icons.chat_bubble_outline, color: Color(0xFFD50032)),
-                title: const Text('Чат'),
-                onTap: () => Navigator.pushReplacementNamed(ctx, '/chat'),
+              onTap: () => Navigator.pushReplacementNamed(ctx, '/home'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.chat_bubble_outline, color: Color(0xFFD50032)),
+              title: Text(
+                t.chat,
+                style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w500),
               ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.logout, color: Color(0xFFD50032)),
-                title: const Text('Выход'),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await AuthService.logout();
-                  Navigator.pushNamedAndRemoveUntil(ctx, '/login', (route) => false);
-                },
+              onTap: () => Navigator.pushReplacementNamed(ctx, '/chat'),
+            ),
+            // Кнопка смены темы
+            ListTile(
+              leading: Icon(
+                isDark ? Icons.light_mode : Icons.dark_mode,
+                color: Color(0xFFD50032),
               ),
-            ],
-          ),
+              title: Text(
+                isDark ? "Светлая тема" : "Тёмная тема",
+                style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              onTap: widget.onToggleTheme,
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Color(0xFFD50032)),
+              title: Text(
+                t.logout,
+                style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await AuthService.logout();
+                Navigator.pushNamedAndRemoveUntil(ctx, '/login', (route) => false);
+              },
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 
-  Widget _buildDormCard(Map<String, dynamic> dorm, bool isEven) {
+  Widget _buildDormCard(Map<String, dynamic> dorm, bool isEven, BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     final images = dorm['images'] as List<dynamic>?;
     final imageUrl =
         (images != null && images.isNotEmpty) ? images[0]['image'] as String : 'assets/banner.png';
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? Color(0xFF232323) : (isEven ? Colors.grey[100]! : Colors.white);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtitleColor = isDark ? Colors.grey[300] : Colors.grey[600];
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 5,
-      color: isEven ? Colors.grey[100] : Colors.white,
+      color: cardBg,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () => Navigator.pushNamed(context, '/dorm/${dorm['id']}'),
@@ -124,35 +177,69 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(dorm['name'] as String,
-                        style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.w700)),
+                        style: GoogleFonts.montserrat(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                        )),
                     const SizedBox(height: 6),
                     Text('₸${dorm['cost']}',
-                        style: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.w500)),
+                        style: GoogleFonts.montserrat(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: textColor,
+                        )),
                     const SizedBox(height: 8),
                     Text(dorm['address'] as String? ?? '',
-                        style: GoogleFonts.montserrat(fontSize: 14, color: Colors.grey[600])),
+                        style: GoogleFonts.montserrat(fontSize: 14, color: subtitleColor)),
                     const SizedBox(height: 8),
-                    // Удобства с иконками, добавляем здесь:
-                    Row(
+                    // Удобства с иконками
+                    Wrap(
+                      spacing: 16,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        const Icon(FontAwesomeIcons.bed, size: 16, color: Colors.grey),
-                        const SizedBox(width: 6),
-                        Text('${dorm['places'] ?? '—'} мест',
-                            style: GoogleFonts.montserrat(fontSize: 14)),
-                        const SizedBox(width: 16),
-                        const Icon(FontAwesomeIcons.utensils, size: 16, color: Colors.grey),
-                        const SizedBox(width: 6),
-                        const Text('Столовая', style: TextStyle(fontSize: 14)),
-                        const SizedBox(width: 16),
-                        const Icon(FontAwesomeIcons.tshirt, size: 16, color: Colors.grey),
-                        const SizedBox(width: 6),
-                        const Text('Прачечная', style: TextStyle(fontSize: 14)),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(FontAwesomeIcons.bed, size: 16, color: subtitleColor),
+                            SizedBox(width: 6),
+                            Text(
+                              '${dorm['places'] ?? '—'} ${t.total_places}',
+                              style: GoogleFonts.montserrat(fontSize: 14, color: textColor),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(FontAwesomeIcons.utensils, size: 16, color: subtitleColor),
+                            SizedBox(width: 6),
+                            Text(
+                              t.dorm_canteen,
+                              style: GoogleFonts.montserrat(fontSize: 14, color: textColor),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(FontAwesomeIcons.tshirt, size: 16, color: subtitleColor),
+                            SizedBox(width: 6),
+                            Text(
+                              t.dorm_laundry,
+                              style: GoogleFonts.montserrat(fontSize: 14, color: textColor),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.grey),
+              Icon(Icons.arrow_forward_ios, size: 18, color: subtitleColor),
             ],
           ),
         ),
@@ -160,36 +247,36 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildFAQSection() {
+  Widget _buildFAQSection(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final bodyColor = isDark ? Colors.grey[300] : Colors.black54;
+
     final faqItems = [
+      {'question': t.faq_q1, 'answer': t.faq_a1},
+      {'question': t.faq_q2, 'answer': t.faq_a2},
       {
-        'question': 'Что входит в стоимость проживания?',
-        'answer': 'Проживание, коммунальные услуги, пользование кухней и душем.',
+        'question': t.faq_q3 ?? 'Кто может получить место в общежитии?',
+        'answer': t.faq_a3 ?? 'Студенты, подавшие заявку и прошедшие отбор.',
       },
       {
-        'question': 'Как долго можно проживать в Доме студентов?',
-        'answer': 'На протяжении всего периода обучения при соблюдении правил.',
-      },
-      {
-        'question': 'Кто может получить место в общежитии?',
-        'answer': 'Студенты, подавшие заявку и прошедшие отбор.',
-      },
-      {
-        'question': 'Как происходит заселение?',
-        'answer':
+        'question': t.faq_q4 ?? 'Как происходит заселение?',
+        'answer': t.faq_a4 ??
             'Выдаётся ордер и заключается договор найма. Прописка оформляется через деканат. Самовольное заселение запрещено.',
       },
       {
-        'question': 'Как я могу оплатить проживание?',
-        'answer': 'Оплата производится через университетскую платёжную систему или банк.',
+        'question': t.faq_q5 ?? 'Как я могу оплатить проживание?',
+        'answer':
+            t.faq_a5 ?? 'Оплата производится через университетскую платёжную систему или банк.',
       },
       {
-        'question': 'Какие правила проживания я должен соблюдать?',
-        'answer': 'Соблюдение тишины, чистоты, уважение к соседям и имуществу.',
+        'question': t.faq_q6 ?? 'Какие правила проживания я должен соблюдать?',
+        'answer': t.faq_a6 ?? 'Соблюдение тишины, чистоты, уважение к соседям и имуществу.',
       },
       {
-        'question': 'Что произойдёт при нарушении правил?',
-        'answer': 'Предупреждение, штраф или выселение в зависимости от серьёзности.',
+        'question': t.faq_q7 ?? 'Что произойдёт при нарушении правил?',
+        'answer': t.faq_a7 ?? 'Предупреждение, штраф или выселение в зависимости от серьёзности.',
       },
     ];
 
@@ -198,16 +285,22 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Часто задаваемые вопросы',
-              style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold)),
+          Text(
+            t.faq,
+            style: GoogleFonts.montserrat(
+                fontSize: 22, fontWeight: FontWeight.bold, color: titleColor),
+          ),
           const SizedBox(height: 12),
           ...faqItems.map((item) => ExpansionTile(
+                collapsedIconColor: titleColor,
+                iconColor: titleColor,
                 title: Text(item['question']!,
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600)),
+                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, color: titleColor)),
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-                    child: Text(item['answer']!, style: GoogleFonts.montserrat(fontSize: 14)),
+                    child: Text(item['answer']!,
+                        style: GoogleFonts.montserrat(fontSize: 14, color: bodyColor)),
                   ),
                 ],
               )),
@@ -218,10 +311,13 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: _buildHeader(),
+      appBar: _buildHeader(context),
       drawer: _buildDrawer(context),
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: ListView(
         children: [
           Builder(
@@ -244,21 +340,25 @@ class _HomePageState extends State<HomePage> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD50032),
+                backgroundColor: Color(0xFFD50032), // Всегда красная!
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
                 padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 18),
                 textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.w700),
               ),
-              child: const Text('Полезное для студентов убрать'),
+              child: Text(t.useful_info_students),
             ),
           ),
           const SizedBox(height: 24),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Наши общежития',
-              style: GoogleFonts.montserrat(fontSize: 26, fontWeight: FontWeight.bold),
+              t.our_dormitories,
+              style: GoogleFonts.montserrat(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -267,11 +367,11 @@ class _HomePageState extends State<HomePage> {
             final dorm = entry.value;
             return Padding(
               padding: const EdgeInsets.only(bottom: 20), // Отступ между карточками
-              child: _buildDormCard(dorm, i % 2 == 0),
+              child: _buildDormCard(dorm, i % 2 == 0, context),
             );
           }).toList(),
           const SizedBox(height: 24),
-          _buildFAQSection(),
+          _buildFAQSection(context),
           const SizedBox(height: 20),
         ],
       ),

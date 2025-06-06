@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:file_picker/file_picker.dart';
 import '../widgets/bottom_navigation_bar.dart';
+import '../gen_l10n/app_localizations.dart';
 
 class EditApplicationScreen extends StatefulWidget {
   @override
@@ -114,7 +115,6 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
       documents.forEach((code, value) {
         if (value is PlatformFile) {
           if (value.bytes != null) {
-            // Web: используем bytes напрямую
             request.files.add(
               http.MultipartFile.fromBytes(
                 code,
@@ -123,7 +123,6 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
               ),
             );
           } else if (value.path != null) {
-            // Mobile/Desktop: читаем файл с диска
             final fileBytes = File(value.path!).readAsBytesSync();
             request.files.add(
               http.MultipartFile.fromBytes(
@@ -152,37 +151,39 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
     }
   }
 
-  Widget _buildTextField(String label, String? value) {
+  Widget _buildTextField(String label, String? value, Color cardColor, Color textColor) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: cardColor,
           borderRadius: BorderRadius.circular(14),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
-            Text(value ?? '-', style: GoogleFonts.montserrat()),
+            Text(label,
+                style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, color: textColor)),
+            Text(value ?? '-', style: GoogleFonts.montserrat(color: textColor)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildEditableField(String label, TextEditingController ctrl) {
+  Widget _buildEditableField(
+      String label, TextEditingController ctrl, Color cardColor, Color textColor) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextField(
         controller: ctrl,
-        style: GoogleFonts.montserrat(),
+        style: GoogleFonts.montserrat(color: textColor),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: GoogleFonts.montserrat(),
+          labelStyle: GoogleFonts.montserrat(color: textColor),
           filled: true,
-          fillColor: Colors.grey.shade100,
+          fillColor: cardColor,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         ),
@@ -190,7 +191,7 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
     );
   }
 
-  Widget _buildFileRow(Map<String, dynamic> doc) {
+  Widget _buildFileRow(Map<String, dynamic> doc, Color cardColor, Color textColor) {
     final code = doc['code'];
     final label = doc['label'] ?? doc['name'];
     final file = documents[code];
@@ -200,12 +201,12 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
+          Text(label, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, color: textColor)),
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: cardColor,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
@@ -214,7 +215,7 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
                   child: file == null
                       ? Text('Файл не выбран', style: GoogleFonts.montserrat(color: Colors.grey))
                       : file is PlatformFile
-                          ? Text(file.name, style: GoogleFonts.montserrat())
+                          ? Text(file.name, style: GoogleFonts.montserrat(color: textColor))
                           : InkWell(
                               onTap: () async {
                                 final url = Uri.parse(file['url']);
@@ -228,7 +229,9 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
                 ),
                 IconButton(
                     onPressed: () => removeFile(code), icon: Icon(Icons.delete, color: Colors.red)),
-                IconButton(onPressed: () => pickFile(code), icon: Icon(Icons.upload_file)),
+                IconButton(
+                    onPressed: () => pickFile(code),
+                    icon: Icon(Icons.upload_file, color: textColor)),
               ],
             ),
           ),
@@ -246,11 +249,19 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = theme.scaffoldBackgroundColor;
+    final cardColor = theme.cardColor;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: Colors.red,
-        title: Text("Редактирование заявки", style: GoogleFonts.montserrat()),
+        backgroundColor: isDark ? Colors.red.shade700 : Colors.red,
+        foregroundColor: Colors.white,
+        title: Text(t.edit_application, style: GoogleFonts.montserrat()),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -259,40 +270,52 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildTextField("Имя", studentData['first_name']),
-                  _buildTextField("Фамилия", studentData['last_name']),
-                  _buildTextField("Курс", studentData['course']?.toString()),
-                  _buildTextField("Пол", studentData['gender'] == 'M' ? 'Мужской' : 'Женский'),
-                  _buildTextField("Дата рождения", studentData['birth_date']),
-                  _buildEditableField("Телефон родителя", parentPhoneCtrl),
-                  _buildEditableField("Результат ЕНТ", entResultCtrl),
+                  _buildTextField(t.first_name, studentData['first_name'], cardColor, textColor),
+                  _buildTextField(t.last_name, studentData['last_name'], cardColor, textColor),
+                  _buildTextField(
+                      t.course, studentData['course']?.toString(), cardColor, textColor),
+                  _buildTextField(t.gender, studentData['gender'] == 'M' ? t.male : t.female,
+                      cardColor, textColor),
+                  _buildTextField(t.ent_result, studentData['ent_result'], cardColor, textColor),
+                  _buildTextField(
+                      t.parent_phone, studentData['parent_phone'], cardColor, textColor),
+                  _buildEditableField(t.parent_phone, parentPhoneCtrl, cardColor, textColor),
+                  _buildEditableField(t.ent_result, entResultCtrl, cardColor, textColor),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     value: dormitoryPrices.contains(selectedDormCost) ? selectedDormCost : null,
                     decoration: InputDecoration(
-                      labelText: 'Ценовой диапазон',
+                      labelText: t.dorm_price_10_months,
+                      labelStyle: GoogleFonts.montserrat(color: textColor),
                       filled: true,
-                      fillColor: Colors.grey.shade100,
+                      fillColor: cardColor,
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
+                    dropdownColor: cardColor,
+                    style: GoogleFonts.montserrat(color: textColor),
                     items: dormitoryPrices
-                        .map((cost) => DropdownMenuItem(value: cost, child: Text("$cost тг")))
+                        .map((cost) => DropdownMenuItem(
+                            value: cost,
+                            child:
+                                Text("$cost тг", style: GoogleFonts.montserrat(color: textColor))))
                         .toList(),
                     onChanged: (val) => setState(() => selectedDormCost = val),
                   ),
                   const SizedBox(height: 20),
-                  ...evidenceTypes.map((doc) => _buildFileRow(doc)).toList(),
+                  ...evidenceTypes.map((doc) => _buildFileRow(doc, cardColor, textColor)).toList(),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: submitChanges,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       minimumSize: const Size.fromHeight(48),
                     ),
-                    child: Text("Сохранить изменения",
-                        style: GoogleFonts.montserrat(color: Colors.white)),
+                    child: Text(t.save_changes, style: GoogleFonts.montserrat(color: Colors.white)),
                   ),
                 ],
               ),
