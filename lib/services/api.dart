@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'dart:html' as html;
+import 'package:flutter/foundation.dart';
 
 const String djangoBaseUrl = "https://dormmate-back.onrender.com/api/v1/";
 const String goBaseUrl = "https://student-chats.onrender.com/api/";
@@ -177,11 +178,23 @@ class GoChatService {
     ..interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final accessToken = await AuthService.getAccessToken(); // из SharedPreferences
+          String? accessToken;
+
+          if (kIsWeb) {
+            // Web: из localStorage
+            accessToken = html.window.localStorage['flutter.access_token'];
+          } else {
+            // Мобильные платформы: из SharedPreferences
+            final prefs = await SharedPreferences.getInstance();
+            accessToken = prefs.getString('access_token');
+          }
+
           print('[GoChatService] Access token: $accessToken');
+
           if (accessToken != null && accessToken.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $accessToken';
           }
+
           return handler.next(options);
         },
         onError: (error, handler) {
