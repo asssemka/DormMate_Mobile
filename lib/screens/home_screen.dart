@@ -148,7 +148,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.logout, color: Color(0xFFD50032)),
+              leading: const Icon(Icons.logout, color: Color.fromARGB(255, 0, 0, 0)),
               title: Text(
                 t.logout,
                 style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w500),
