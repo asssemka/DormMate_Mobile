@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/api.dart';
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http_parser/http_parser.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../gen_l10n/app_localizations.dart';
+import '../services/api.dart';
 
 class ApplyScreen extends StatefulWidget {
   @override
@@ -23,6 +22,12 @@ class _ApplyScreenState extends State<ApplyScreen> {
   String? selectedDormCost;
   bool isLoading = false;
   bool showDocuments = false;
+  String? gpaValue;
+
+  // Для ЕНТ сертификата
+  PlatformFile? entCertificateFile;
+  String? entScore;
+  String? entExtractError;
 
   @override
   void initState() {
@@ -40,18 +45,75 @@ class _ApplyScreenState extends State<ApplyScreen> {
     }
   }
 
+  Future<void> pickEntCertificateAndExtractScore() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (result != null && result.files.isNotEmpty) {
+      setState(() {
+        entCertificateFile = result.files.first;
+        entScore = null;
+        entExtractError = null;
+      });
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('access_token');
+        final uri = Uri.parse("https://dormmate-back.onrender.com/api/v1/ent-extract/");
+        final request = http.MultipartRequest('POST', uri)
+          ..headers["Authorization"] = "Bearer $token"
+          ..files.add(
+            http.MultipartFile.fromBytes(
+              'file',
+              entCertificateFile!.bytes!,
+              filename: entCertificateFile!.name,
+              contentType: MediaType('application', 'pdf'),
+            ),
+          );
+        final streamed = await request.send();
+        final response = await http.Response.fromStream(streamed);
+        if (response.statusCode == 200) {
+          final data = jsonDecode(utf8.decode(response.bodyBytes));
+          setState(() {
+            entScore = data['total_score']?.toString();
+            entExtractError = null;
+          });
+        } else {
+          setState(() {
+            entScore = null;
+            entExtractError = "Ошибка при извлечении балла";
+          });
+        }
+      } catch (e) {
+        setState(() {
+          entScore = null;
+          entExtractError = "Ошибка при отправке файла: $e";
+        });
+      }
+    }
+  }
+
+  void removeEntCertificate() {
+    setState(() {
+      entCertificateFile = null;
+      entScore = null;
+      entExtractError = null;
+    });
+  }
+
   Future<void> fetchInitialData() async {
     try {
       final student = await AuthService.getStudentData();
       final client = RefreshHttpClient();
 
-      final dormResponse = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/dorms/costs/"));
+      final dormResponse =
+          await client.get(Uri.parse("https://dormmate-back.onrender.com/api/v1/dorms/costs/"));
       final dormData = jsonDecode(utf8.decode(dormResponse.bodyBytes));
       final dormList =
           dormData is Map && dormData.containsKey('results') ? dormData['results'] : dormData;
 
       final evidenceResponse = await client.get(
-        Uri.parse("http://127.0.0.1:8000/api/v1/evidence-types/"),
+        Uri.parse("https://dormmate-back.onrender.com/api/v1/evidence-types/"),
       );
       final decoded = jsonDecode(utf8.decode(evidenceResponse.bodyBytes));
       final evidenceList =
@@ -63,6 +125,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
         studentData = student;
         dormitoryPrices = (dormList as List).map((e) => e.toString()).toList();
         evidenceTypes = List<Map<String, dynamic>>.from(evidenceList);
+        gpaValue = student['gpa']?.toString() ?? '';
       });
     } catch (e) {
       debugPrint("Ошибка при загрузке данных: $e");
@@ -70,10 +133,31 @@ class _ApplyScreenState extends State<ApplyScreen> {
   }
 
   Future<void> submitApplication() async {
+    final int course = int.tryParse(studentData['course']?.toString() ?? '0') ?? 0;
+    final bool isFirstYear = course == 1;
+
     if (selectedDormCost == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Выберите стоимость общежития")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Выберите стоимость общежития")),
+      );
+      return;
+    }
+    if (isFirstYear && entCertificateFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Загрузите PDF сертификат ЕНТ")),
+      );
+      return;
+    }
+    if (isFirstYear && (entScore == null || entScore!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Не удалось получить балл ЕНТ из файла")),
+      );
+      return;
+    }
+    if (!isFirstYear && (gpaValue == null || gpaValue!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Введите GPA")),
+      );
       return;
     }
 
@@ -86,13 +170,31 @@ class _ApplyScreenState extends State<ApplyScreen> {
 
       final request = http.MultipartRequest(
         "POST",
-        Uri.parse("http://127.0.0.1:8000/api/v1/create_application/"),
+        Uri.parse("https://dormmate-back.onrender.com/api/v1/create_application/"),
       )
         ..fields['dormitory_cost'] = selectedDormCost!
         ..fields['parent_phone'] = studentData['parent_phone'] ?? ''
-        ..fields['ent_result'] = studentData['ent_result']?.toString() ?? ''
         ..headers["Authorization"] = "Bearer $token";
 
+      // GPA для 2-4 курса
+      if (!isFirstYear) {
+        request.fields['ent_result'] = gpaValue ?? '';
+      }
+
+      // Для 1 курса — файл сертификата и балл
+      if (isFirstYear && entCertificateFile != null && entCertificateFile!.bytes != null) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'ent_certificate', // ключ для бэка
+            entCertificateFile!.bytes!,
+            filename: entCertificateFile!.name,
+            contentType: MediaType('application', 'pdf'),
+          ),
+        );
+        request.fields['ent_result'] = entScore ?? '';
+      }
+
+      // Остальные документы (кроме ent_certificate)
       documents.forEach((key, file) {
         if (file.bytes != null) {
           request.files.add(
@@ -121,14 +223,15 @@ class _ApplyScreenState extends State<ApplyScreen> {
     }
   }
 
-  /// Переработанный текстовый инпут с поддержкой темы
   Widget _buildTextField(
     String label,
     String value,
     Color textColor,
     Color fillColor,
-    bool editable,
-  ) {
+    bool editable, {
+    void Function(String)? onChanged,
+    TextInputType? keyboardType,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -139,6 +242,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
           TextFormField(
             initialValue: value,
             readOnly: !editable,
+            onChanged: onChanged,
+            keyboardType: keyboardType,
             style: GoogleFonts.montserrat(color: textColor),
             decoration: InputDecoration(
               filled: true,
@@ -155,42 +260,112 @@ class _ApplyScreenState extends State<ApplyScreen> {
     );
   }
 
-  /// Кастомизированный Upload (чтобы кнопки тоже были под темой)
+  Widget _buildEntCertificateBlock(Color inputBg, Color textMain) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "ЕНТ балл (автоматически):",
+          style: GoogleFonts.montserrat(
+            fontSize: 14,
+            color: textMain,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          readOnly: true,
+          controller: TextEditingController(text: entScore ?? ''),
+          decoration: InputDecoration(
+            hintText: "Балл появится после загрузки PDF",
+            filled: true,
+            fillColor: inputBg,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          style: GoogleFonts.montserrat(color: textMain),
+        ),
+        const SizedBox(height: 10),
+        ElevatedButton.icon(
+          onPressed: pickEntCertificateAndExtractScore,
+          icon: const Icon(Icons.picture_as_pdf),
+          label: Text(
+            entCertificateFile == null
+                ? "Выбрать PDF сертификат"
+                : "Файл прикреплён: ${entCertificateFile!.name}",
+            style: GoogleFonts.montserrat(color: Colors.white),
+            overflow: TextOverflow.ellipsis,
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: entCertificateFile == null ? Colors.blue : Colors.green,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            minimumSize: const Size.fromHeight(45),
+          ),
+        ),
+        if (entCertificateFile != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: TextButton.icon(
+              onPressed: removeEntCertificate,
+              icon: const Icon(Icons.delete, color: Colors.red),
+              label: Text('Удалить файл', style: TextStyle(color: Colors.red)),
+            ),
+          ),
+        if (entExtractError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              entExtractError!,
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
   Widget _buildFileUploadSectionWithTranslation(
     AppLocalizations t,
     bool isDark,
     Color blockBg,
     Color textMain,
+    bool isFirstYear,
   ) {
     return AnimatedCrossFade(
       firstChild: const SizedBox.shrink(),
       secondChild: Column(
-        children: evidenceTypes.map((doc) {
-          final code = doc['code'];
-          final label = doc['label'] ?? doc['name'];
-          final file = documents[code];
-          return Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: ElevatedButton(
-              onPressed: () => pickFile(code),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: file == null
-                    ? (isDark ? Colors.blueGrey : Colors.blue)
-                    : (isDark ? Colors.green.shade700 : Colors.green),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                minimumSize: const Size.fromHeight(45),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...evidenceTypes.where((doc) => doc['code'] != 'ent_certificate').map((doc) {
+            final code = doc['code'];
+            final label = doc['label'] ?? doc['name'];
+            final file = documents[code];
+            return Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: ElevatedButton(
+                onPressed: () => pickFile(code),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: file == null
+                      ? (isDark ? Colors.blueGrey : Colors.blue)
+                      : (isDark ? Colors.green.shade700 : Colors.green),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  minimumSize: const Size.fromHeight(45),
+                ),
+                child: Text(
+                  file == null
+                      ? "${t.upload} $label"
+                      : "${t.file_attached ?? 'Файл прикреплён'}: ${file.name}",
+                  style: GoogleFonts.montserrat(color: Colors.white),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              child: Text(
-                file == null
-                    ? "${t.upload} $label"
-                    : "${t.file_attached ?? 'Файл прикреплён'}: ${file.name}",
-                style: GoogleFonts.montserrat(color: Colors.white),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ],
       ),
       crossFadeState: showDocuments ? CrossFadeState.showSecond : CrossFadeState.showFirst,
       duration: const Duration(milliseconds: 300),
@@ -205,8 +380,10 @@ class _ApplyScreenState extends State<ApplyScreen> {
     final mainBg = Theme.of(context).scaffoldBackgroundColor;
     final blockBg = Theme.of(context).cardColor;
     final textMain = isDark ? Colors.white : Colors.black87;
-    final textHint = isDark ? Colors.grey[300]! : Colors.grey[700]!;
     final inputBg = isDark ? Color(0xFF22232A) : Colors.grey.shade200;
+
+    final int course = int.tryParse(studentData['course']?.toString() ?? '0') ?? 0;
+    final bool isFirstYear = course == 1;
 
     return Scaffold(
       backgroundColor: mainBg,
@@ -254,8 +431,6 @@ class _ApplyScreenState extends State<ApplyScreen> {
                         inputBg, false),
                     _buildTextField(
                         t.parent_phone, studentData['parent_phone'] ?? '', textMain, inputBg, true),
-                    _buildTextField(t.ent_result, studentData['ent_result']?.toString() ?? '',
-                        textMain, inputBg, true),
                     _buildTextField(
                         t.gender,
                         studentData['gender'] == 'M' ? t.male ?? 'Мужской' : t.female,
@@ -264,12 +439,24 @@ class _ApplyScreenState extends State<ApplyScreen> {
                         false),
                     _buildTextField(t.dorm_price_10_months, studentData['birth_date'] ?? '',
                         textMain, inputBg, false),
-                    Text(
-                      t.upload_ent_certificate ??
-                          "Загрузите ЕНТ сертификат в разделе \"Загрузить документы\", без этого сертификата ваш результат учитываться не будет",
-                      style: GoogleFonts.montserrat(
-                          fontSize: 12, color: textHint, fontWeight: FontWeight.w400),
-                    ),
+
+                    // ==== Курс-специфичные поля ====
+                    if (!isFirstYear)
+                      _buildTextField(
+                        "GPA",
+                        gpaValue ?? '',
+                        textMain,
+                        inputBg,
+                        true,
+                        onChanged: (val) => gpaValue = val,
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      ),
+
+                    if (isFirstYear) ...[
+                      const SizedBox(height: 16),
+                      _buildEntCertificateBlock(inputBg, textMain),
+                    ],
+
                     const SizedBox(height: 20),
                     DropdownButtonFormField<String>(
                       value: selectedDormCost,
@@ -309,7 +496,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
                         style: GoogleFonts.montserrat(color: Colors.white),
                       ),
                     ),
-                    _buildFileUploadSectionWithTranslation(t, isDark, blockBg, textMain),
+                    _buildFileUploadSectionWithTranslation(
+                        t, isDark, blockBg, textMain, isFirstYear),
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: isLoading ? null : submitApplication,
@@ -327,7 +515,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
                 ),
               ),
             ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 1),
     );
   }
 }

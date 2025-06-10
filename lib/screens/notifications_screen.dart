@@ -49,6 +49,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  String getNotificationText(Map<String, dynamic> notification, BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    if (locale == 'kk') {
+      return notification['message_kk'] as String? ??
+          notification['message_ru'] as String? ??
+          notification['message_en'] as String? ??
+          '';
+    } else if (locale == 'en') {
+      return notification['message_en'] as String? ??
+          notification['message_ru'] as String? ??
+          notification['message_kk'] as String? ??
+          '';
+    } else {
+      return notification['message_ru'] as String? ??
+          notification['message_kk'] as String? ??
+          notification['message_en'] as String? ??
+          '';
+    }
+  }
+
   String _formatTime(String iso) {
     final date = DateTime.tryParse(iso);
     if (date == null) return '';
@@ -170,7 +190,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        n['message'] ?? '',
+                                        getNotificationText(n, context),
                                         style: GoogleFonts.montserrat(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
@@ -233,7 +253,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         },
                       ),
       ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 3),
     );
   }
 }

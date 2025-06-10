@@ -39,23 +39,26 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
     try {
       final client = RefreshHttpClient();
       final student = await AuthService.getStudentData();
-      final resApp = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/application/"));
+      final resApp =
+          await client.get(Uri.parse("https://dormmate-back.onrender.com/api/v1/application/"));
       final appData = jsonDecode(utf8.decode(resApp.bodyBytes));
 
-      final resEvidence =
-          await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/application/evidences/"));
+      final resEvidence = await client
+          .get(Uri.parse("https://dormmate-back.onrender.com/api/v1/application/evidences/"));
       final evidencesRaw = jsonDecode(utf8.decode(resEvidence.bodyBytes));
       final evidences = evidencesRaw is Map && evidencesRaw.containsKey('results')
           ? List<Map<String, dynamic>>.from(evidencesRaw['results'])
           : List<Map<String, dynamic>>.from(evidencesRaw);
 
-      final resTypes = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/evidence-types/"));
+      final resTypes =
+          await client.get(Uri.parse("https://dormmate-back.onrender.com/api/v1/evidence-types/"));
       final typesRaw = jsonDecode(utf8.decode(resTypes.bodyBytes));
       final types = typesRaw is Map && typesRaw.containsKey('results')
           ? List<Map<String, dynamic>>.from(typesRaw['results'])
           : List<Map<String, dynamic>>.from(typesRaw);
 
-      final resPrices = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/dorms/costs/"));
+      final resPrices =
+          await client.get(Uri.parse("https://dormmate-back.onrender.com/api/v1/dorms/costs/"));
       final pricesRaw = jsonDecode(utf8.decode(resPrices.bodyBytes));
       final prices = pricesRaw is Map && pricesRaw.containsKey('results')
           ? List<String>.from(pricesRaw['results'].map((e) => e.toString()))
@@ -103,7 +106,7 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
 
   Future<void> submitChanges() async {
     try {
-      final uri = Uri.parse("http://127.0.0.1:8000/api/v1/student/application/");
+      final uri = Uri.parse("https://dormmate-back.onrender.com/api/v1/student/application/");
       final token = await AuthService.getAccessToken();
       final request = http.MultipartRequest('PATCH', uri)
         ..headers['Authorization'] = 'Bearer $token';
@@ -220,11 +223,25 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
                               onTap: () async {
                                 final url = Uri.parse(file['url']);
                                 if (await canLaunchUrl(url)) {
-                                  await launchUrl(url);
+                                  await launchUrl(url, mode: LaunchMode.externalApplication);
                                 }
                               },
-                              child: Text(file['name'],
-                                  style: GoogleFonts.montserrat(color: Colors.blue)),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.picture_as_pdf, color: Colors.red, size: 20),
+                                  SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      file['name'] ?? 'PDF',
+                                      style: GoogleFonts.montserrat(
+                                        color: Colors.red,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                 ),
                 IconButton(
@@ -276,11 +293,12 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
                       t.course, studentData['course']?.toString(), cardColor, textColor),
                   _buildTextField(t.gender, studentData['gender'] == 'M' ? t.male : t.female,
                       cardColor, textColor),
-                  _buildTextField(t.ent_result, studentData['ent_result'], cardColor, textColor),
+                  _buildTextField(t.ent_result, studentData['ent_result'], cardColor,
+                      textColor), // просто просмотр
                   _buildTextField(
                       t.parent_phone, studentData['parent_phone'], cardColor, textColor),
-                  _buildEditableField(t.parent_phone, parentPhoneCtrl, cardColor, textColor),
-                  _buildEditableField(t.ent_result, entResultCtrl, cardColor, textColor),
+                  _buildEditableField(
+                      t.parent_phone, parentPhoneCtrl, cardColor, textColor), // для изменения
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     value: dormitoryPrices.contains(selectedDormCost) ? selectedDormCost : null,

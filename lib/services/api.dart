@@ -4,12 +4,17 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
+import 'package:dio/dio.dart';
+import 'dart:html' as html;
+
+const String djangoBaseUrl = "https://dormmate-back.onrender.com/api/v1/";
+const String goBaseUrl = "https://student-chats.onrender.com/api/";
 
 /// Класс для отправки запросов c автообновлением токена при 401.
 /// При первом 401 делает POST /token/refresh/ и, если успешно, повторяет запрос.
 class RefreshHttpClient extends http.BaseClient {
   final http.Client _inner = http.Client();
-  final String baseUrl = "http://127.0.0.1:8000/api/v1/";
+  final String baseUrl = "djangoBaseUrl/api/v1/";
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
@@ -78,7 +83,7 @@ class RefreshHttpClient extends http.BaseClient {
 
 /// Сервис аутентификации
 class AuthService {
-  static const String _baseUrl = "http://127.0.0.1:8000/api/v1/";
+  static const String _baseUrl = "https://dormmate-back.onrender.com/api/v1/";
 
   /// Логин: либо через phone_number (только цифры), либо через s
   static Future<bool> login(String identifier, String password) async {
@@ -163,6 +168,54 @@ class AuthService {
   }
 }
 
+class GoChatService {
+  static final Dio _dio = Dio(BaseOptions(
+    baseUrl: goBaseUrl,
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 10),
+  ))
+    ..interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final accessToken = html.window.localStorage['flutter.access_token'];
+          if (accessToken != null && accessToken.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $accessToken';
+          }
+          return handler.next(options);
+        },
+        onError: (error, handler) {
+          print(
+              '[GoChatService] ERROR: ${error.response?.statusCode} on ${error.requestOptions.uri}');
+          return handler.next(error);
+        },
+      ),
+    );
+
+  /// Получить сообщения чата
+  static Future<List<dynamic>> fetchMessages(int chatId) async {
+    final resp = await _dio.get('chats/$chatId/messages/');
+    return resp.data;
+  }
+
+  /// Отправить сообщение
+  static Future<void> sendMessage(int chatId, String text) async {
+    await _dio.post('chats/$chatId/send/', data: {'text': text});
+  }
+
+  /// Создать новый чат
+  static Future<int> createChat() async {
+    final resp = await _dio.post('student/chats/create/');
+    return resp.data['id'];
+  }
+
+  static Future<List<dynamic>> fetchChats() async {
+    final resp = await _dio.get('chats');
+    return resp.data;
+  }
+
+  // Добавляй остальные методы по аналогии!
+}
+
 /// Сервис для заявок
 class ApplicationService {
   /// Создание заявки POST /create_application/
@@ -173,7 +226,7 @@ class ApplicationService {
 
     final request = http.MultipartRequest(
       "POST",
-      Uri.parse("http://127.0.0.1:8000/api/v1/create_application/"),
+      Uri.parse("https://dormmate-back.onrender.com/api/v1/create_application/"),
     )
       ..fields['dormitory_cost'] = dormitoryCost
       ..headers["Authorization"] = "Bearer $token";
@@ -201,7 +254,7 @@ class ApplicationService {
   static Future<void> uploadAvatar(File file) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse("http://127.0.0.1:8000/api/v1/upload-avatar/"),
+      Uri.parse("https://dormmate-back.onrender.com/api/v1/upload-avatar/"),
     );
     request.files.add(
       http.MultipartFile.fromBytes(
@@ -225,12 +278,12 @@ class ApplicationService {
 
     final request = http.MultipartRequest(
       "POST",
-      Uri.parse("http://127.0.0.1:8000/api/v1/upload_payment_screenshot/"),
+      Uri.parse("https://dormmate-back.onrender.com//api/v1/upload_payment_screenshot/"),
     )
       ..headers["Authorization"] = "Bearer $token"
       ..files.add(
         http.MultipartFile.fromBytes(
-          'payment_screenshot',
+          'upload_payment_screenshot',
           screenshot.readAsBytesSync(),
           filename: screenshot.path.split('/').last,
         ),
@@ -250,12 +303,12 @@ class ApplicationService {
 
     final request = http.MultipartRequest(
       "POST",
-      Uri.parse("http://127.0.0.1:8000/api/v1/upload_payment_screenshot/"),
+      Uri.parse("https://dormmate-back.onrender.com//api/v1/upload_payment_screenshot/"),
     )
       ..headers["Authorization"] = "Bearer $token"
       ..files.add(
         http.MultipartFile.fromBytes(
-          'payment_screenshot',
+          'upload_payment_screenshot',
           bytes,
           filename: filename,
         ),
@@ -271,8 +324,8 @@ class ApplicationService {
   /// Получаем статус заявки GET /application_status/
   static Future<String> fetchApplicationStatus() async {
     final client = RefreshHttpClient();
-    final response =
-        await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/application_status/"));
+    final response = await client
+        .get(Uri.parse("https://dormmate-back.onrender.com/api/v1/application_status/"));
     if (response.statusCode == 200) {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
       return data['status'] ?? 'Статус не найден';
@@ -284,7 +337,7 @@ class ApplicationService {
 
 /// Сервис для чата
 class ChatService {
-  static const String baseUrl = "http://127.0.0.1:8000/api/v1/";
+  static const String baseUrl = "https://dormmate-back.onrender.com/api/v1/";
 
   /// POST /student/chats/create/ -> возвращает {id:..}, 200 или 201
   static Future<int> getStudentChat() async {
@@ -360,7 +413,8 @@ class ChatService {
 
   static Future<List<Map<String, dynamic>>> fetchAllChats() async {
     final client = RefreshHttpClient();
-    final response = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/chats/"));
+    final response =
+        await client.get(Uri.parse("https://dormmate-back.onrender.com/api/v1/chats/"));
     if (response.statusCode == 200) {
       final decoded = jsonDecode(utf8.decode(response.bodyBytes));
       return List<Map<String, dynamic>>.from(decoded);
@@ -373,7 +427,8 @@ class ChatService {
 class NotificationsService {
   static Future<List<Map<String, dynamic>>> getNotifications() async {
     final client = RefreshHttpClient();
-    final response = await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/notifications/"));
+    final response =
+        await client.get(Uri.parse("https://dormmate-back.onrender.com/api/v1/notifications/"));
 
     // Проверяем статус:
     if (response.statusCode == 200) {
@@ -389,7 +444,7 @@ class NotificationsService {
   static Future<void> markAsRead(List<int> ids) async {
     final client = RefreshHttpClient();
     final response = await client.post(
-      Uri.parse("http://127.0.0.1:8000/api/v1/notifications/"),
+      Uri.parse("https://dormmate-back.onrender.com/api/v1/notifications/"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"notification_ids": ids}),
     );
@@ -400,8 +455,8 @@ class NotificationsService {
 
   static Future<List<Map<String, dynamic>>> getAdminNotifications() async {
     final client = RefreshHttpClient();
-    final response =
-        await client.get(Uri.parse("http://127.0.0.1:8000/api/v1/notifications/admin/"));
+    final response = await client
+        .get(Uri.parse("https://dormmate-back.onrender.com/api/v1/notifications/admin/"));
     if (response.statusCode == 200) {
       final decoded = jsonDecode(utf8.decode(response.bodyBytes));
       return List<Map<String, dynamic>>.from(decoded);
@@ -413,7 +468,7 @@ class NotificationsService {
   static Future<void> markAdminAsRead(List<int> ids) async {
     final client = RefreshHttpClient();
     final response = await client.post(
-      Uri.parse("http://127.0.0.1:8000/api/v1/notifications/admin/"),
+      Uri.parse("https://dormmate-back.onrender.com/api/v1/notifications/admin/"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"notification_ids": ids}),
     );
@@ -425,7 +480,7 @@ class NotificationsService {
 
 class DormService {
   final RefreshHttpClient _client = RefreshHttpClient();
-  static const String _baseUrl = "http://127.0.0.1:8000/api/v1/";
+  static const String _baseUrl = "https://dormmate-back.onrender.com/api/v1/";
 
   /// Получить список общежитий в "сыром" формате
   Future<List<Map<String, dynamic>>> fetchDormsRaw() async {

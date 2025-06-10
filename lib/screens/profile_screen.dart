@@ -514,7 +514,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 22.0),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: blockBg,
+                        color: const Color.fromARGB(255, 233, 233, 233),
                         borderRadius: BorderRadius.circular(26),
                         boxShadow: [
                           BoxShadow(
@@ -581,7 +581,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: blockBg,
+                        color: const Color.fromARGB(255, 233, 233, 233),
                         borderRadius: BorderRadius.circular(26),
                         boxShadow: [
                           BoxShadow(
@@ -746,7 +746,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 4),
     );
   }
 }
