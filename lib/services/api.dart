@@ -176,8 +176,9 @@ class GoChatService {
   ))
     ..interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
-          final accessToken = html.window.localStorage['flutter.access_token'];
+        onRequest: (options, handler) async {
+          final accessToken = await AuthService.getAccessToken(); // из SharedPreferences
+          print('[GoChatService] Access token: $accessToken');
           if (accessToken != null && accessToken.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $accessToken';
           }
@@ -191,18 +192,15 @@ class GoChatService {
       ),
     );
 
-  /// Получить сообщения чата
   static Future<List<dynamic>> fetchMessages(int chatId) async {
     final resp = await _dio.get('chats/$chatId/messages/');
     return resp.data;
   }
 
-  /// Отправить сообщение
   static Future<void> sendMessage(int chatId, String text) async {
     await _dio.post('chats/$chatId/send/', data: {'text': text});
   }
 
-  /// Создать новый чат
   static Future<int> createChat() async {
     final resp = await _dio.post('student/chats/create/');
     return resp.data['id'];
@@ -212,8 +210,6 @@ class GoChatService {
     final resp = await _dio.get('chats');
     return resp.data;
   }
-
-  // Добавляй остальные методы по аналогии!
 }
 
 /// Сервис для заявок
