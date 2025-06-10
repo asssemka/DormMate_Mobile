@@ -24,6 +24,20 @@ class _TestPageState extends State<TestPage> {
     fetchQuestions();
   }
 
+  String getLocalizedField(Map<String, dynamic> obj, BuildContext context, String baseField) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final keys = [
+      '${baseField}_$locale', // напр. question_text_ru
+      '${baseField}_ru',
+      '${baseField}_kk',
+      '${baseField}_en',
+    ];
+    for (final key in keys) {
+      if (obj[key] != null && (obj[key] as String).trim().isNotEmpty) return obj[key] as String;
+    }
+    return '';
+  }
+
   Future<void> fetchQuestions() async {
     setState(() => loading = true);
     try {
@@ -150,7 +164,7 @@ class _TestPageState extends State<TestPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              questions[currentIndex]['text'] ?? '',
+                              getLocalizedField(questions[currentIndex], context, 'question_text'),
                               style: GoogleFonts.montserrat(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 17,
@@ -210,14 +224,29 @@ class _TestPageState extends State<TestPage> {
     );
   }
 
-  List<Widget> _buildAnswerOptions(Map<String, dynamic> question, int questionIdx, Color textColor,
-      Color cardColor, bool isDark) {
-    final answersList = question['answers'] ?? [];
+  List<Widget> _buildAnswerOptions(
+    Map<String, dynamic> question,
+    int questionIdx,
+    Color textColor,
+    Color cardColor,
+    bool isDark,
+  ) {
+    final answerFields = ['answer_variant_a', 'answer_variant_b', 'answer_variant_c'];
+    final answersList = answerFields
+        .map((f) => getLocalizedField(question, context, f))
+        .where((t) => t.isNotEmpty)
+        .toList();
+
+    // Список букв-индексов для вариантов
+    final answerKeys = ['A', 'B', 'C'];
+
     return List<Widget>.generate(
       answersList.length,
       (i) {
-        final answerText = answersList[i].toString();
-        final isSelected = answers[questionIdx] == answerText;
+        final answerText = answersList[i];
+        final answerKey = answerKeys[i]; // "A", "B" или "C"
+        final isSelected = answers[questionIdx] == answerKey;
+
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           child: Material(
@@ -225,7 +254,7 @@ class _TestPageState extends State<TestPage> {
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
-              onTap: () => setState(() => answers[questionIdx] = answerText),
+              onTap: () => setState(() => answers[questionIdx] = answerKey), // <--- ВАЖНО!
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                 child: Row(
@@ -247,6 +276,8 @@ class _TestPageState extends State<TestPage> {
                         ),
                       ),
                     ),
+                    // Можно рядом показывать и букву, если нужно:
+                    // Text(answerKey, style: GoogleFonts.montserrat(color: textColor)),
                   ],
                 ),
               ),

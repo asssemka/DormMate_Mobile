@@ -31,6 +31,46 @@ class _DormDetailPageState extends State<DormDetailPage> {
     fetchDorm();
   }
 
+  String getDormDescription(Map<String, dynamic> dorm, BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    if (locale == 'kk') {
+      return dorm['description_kk'] as String? ??
+          dorm['description_ru'] as String? ??
+          dorm['description_en'] as String? ??
+          '';
+    } else if (locale == 'en') {
+      return dorm['description_en'] as String? ??
+          dorm['description_ru'] as String? ??
+          dorm['description_kk'] as String? ??
+          '';
+    } else {
+      return dorm['description_ru'] as String? ??
+          dorm['description_kk'] as String? ??
+          dorm['description_en'] as String? ??
+          '';
+    }
+  }
+
+  String getDormName(Map<String, dynamic> dorm, BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    if (locale == 'kk') {
+      return dorm['name_kk'] as String? ??
+          dorm['name_ru'] as String? ??
+          dorm['name_en'] as String? ??
+          '';
+    } else if (locale == 'en') {
+      return dorm['name_en'] as String? ??
+          dorm['name_ru'] as String? ??
+          dorm['name_kk'] as String? ??
+          '';
+    } else {
+      return dorm['name_ru'] as String? ??
+          dorm['name_kk'] as String? ??
+          dorm['name_en'] as String? ??
+          '';
+    }
+  }
+
   Future<void> fetchDorm() async {
     try {
       final response = await http.get(
@@ -94,7 +134,7 @@ class _DormDetailPageState extends State<DormDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        dorm?['name'] ?? t.name_not_found,
+                        getDormName(dorm!, context), // <--- вот так
                         style: GoogleFonts.montserrat(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -107,7 +147,9 @@ class _DormDetailPageState extends State<DormDetailPage> {
                       _buildCardSection([
                         _infoRow(
                           t.description,
-                          dorm?['description'] ?? t.description_not_found,
+                          dorm == null
+                              ? t.description_not_found
+                              : getDormDescription(dorm!, context),
                           mainText,
                           subText,
                         ),
@@ -182,7 +224,7 @@ class _DormDetailPageState extends State<DormDetailPage> {
                                 arguments: {
                                   'dorm_id': dorm!['id'],
                                   'dorm_cost': dorm!['cost'],
-                                  'dorm_name': dorm!['name'],
+                                  'dorm_name': getDormName(dorm!, context),
                                 },
                               );
                             },

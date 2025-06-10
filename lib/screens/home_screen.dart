@@ -6,6 +6,7 @@ import '../widgets/banner_carousel.dart';
 import '../widgets/useful_info_page.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../gen_l10n/app_localizations.dart';
+import 'dart:html' as html;
 
 class HomePage extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -62,7 +63,7 @@ class _HomePageState extends State<HomePage> {
         //   IconButton(
         //     icon: Icon(
         //       widget.themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode,
-        //       color: Theme.of(context).iconTheme.color,
+        //       color: Color(0xFFD50032),
         //     ),
         //     tooltip: widget.themeMode == ThemeMode.dark ? "Светлая тема" : "Тёмная тема",
         //     onPressed: widget.onToggleTheme,
@@ -70,6 +71,26 @@ class _HomePageState extends State<HomePage> {
         // ],
         centerTitle: true,
       );
+
+  String getDormName(Map<String, dynamic> dorm, BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    if (locale == 'kk') {
+      return dorm['name_kk'] as String? ??
+          dorm['name_ru'] as String? ??
+          dorm['name_en'] as String? ??
+          '';
+    } else if (locale == 'en') {
+      return dorm['name_en'] as String? ??
+          dorm['name_ru'] as String? ??
+          dorm['name_kk'] as String? ??
+          '';
+    } else {
+      return dorm['name_ru'] as String? ??
+          dorm['name_kk'] as String? ??
+          dorm['name_en'] as String? ??
+          '';
+    }
+  }
 
   Drawer _buildDrawer(BuildContext ctx) {
     final t = AppLocalizations.of(ctx)!;
@@ -138,6 +159,18 @@ class _HomePageState extends State<HomePage> {
                 Navigator.pushNamedAndRemoveUntil(ctx, '/login', (route) => false);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.chat_bubble_outline, color: Color(0xFFD50032)),
+              title: Text(
+                t.chat,
+                style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              onTap: () {
+                final token = html.window.localStorage['flutter.access_token'];
+                print('TOKEN BEFORE CHAT: $token');
+                Navigator.pushNamed(context, '/dorm_chats');
+              },
+            ),
           ],
         ),
       ),
@@ -176,12 +209,15 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(dorm['name'] as String,
-                        style: GoogleFonts.montserrat(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: textColor,
-                        )),
+                    Text(
+                      getDormName(dorm, context),
+                      style: GoogleFonts.montserrat(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
+
                     const SizedBox(height: 6),
                     Text('₸${dorm['cost']}',
                         style: GoogleFonts.montserrat(
