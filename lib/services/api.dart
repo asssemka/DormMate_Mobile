@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+// ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
 
@@ -86,7 +87,6 @@ class RefreshHttpClient extends http.BaseClient {
 class AuthService {
   static const String _baseUrl = "https://dormmate-back.onrender.com/api/v1/";
 
-  /// Логин: либо через phone_number (только цифры), либо через s
   static Future<bool> login(String identifier, String password) async {
     final body = RegExp(r'^\d+$').hasMatch(identifier)
         ? {"phone_number": identifier, "password": password}
@@ -100,17 +100,26 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      final prefs = await SharedPreferences.getInstance();
 
-      // Сохраняем access/refresh
-      prefs.setString('access_token', data["access"]);
-      prefs.setString('refresh_token', data["refresh"]);
-
-      if (data.containsKey("user_type")) {
-        prefs.setString('user_type', data["user_type"]);
+      // ✅ Сохраняем токены и user_type в зависимости от платформы
+      if (kIsWeb) {
+        html.window.localStorage['flutter.access_token'] = data["access"];
+        html.window.localStorage['flutter.refresh_token'] = data["refresh"];
+        if (data.containsKey("user_type")) {
+          html.window.localStorage['flutter.user_type'] = data["user_type"];
+        }
+      } else {
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('access_token', data["access"]);
+        prefs.setString('refresh_token', data["refresh"]);
+        if (data.containsKey("user_type")) {
+          prefs.setString('user_type', data["user_type"]);
+        }
       }
+
       return true;
     }
+
     return false;
   }
 
@@ -181,10 +190,8 @@ class GoChatService {
           String? accessToken;
 
           if (kIsWeb) {
-            // Web: из localStorage
             accessToken = html.window.localStorage['flutter.access_token'];
           } else {
-            // Мобильные платформы: из SharedPreferences
             final prefs = await SharedPreferences.getInstance();
             accessToken = prefs.getString('access_token');
           }
