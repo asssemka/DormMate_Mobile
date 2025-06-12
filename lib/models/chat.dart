@@ -1,6 +1,4 @@
-// lib/models/chat.dart
 class Chat {
-  // приходит строкой, но серверу нужен int
   final String chatId;
   int get idAsInt => int.tryParse(chatId) ?? 0;
 
@@ -13,6 +11,10 @@ class Chat {
   final DateTime? lastTime;
   final int unread;
 
+  // Add fields for the last message sender and sender's name
+  final String? lastSender;
+  final String? lastSenderName;
+
   Chat({
     required this.chatId,
     required this.type,
@@ -22,6 +24,8 @@ class Chat {
     this.lastText,
     this.lastTime,
     this.unread = 0,
+    this.lastSender,
+    this.lastSenderName,
   });
 
   Chat copyWith({int? unread}) => Chat(
@@ -33,6 +37,8 @@ class Chat {
         lastText: lastText,
         lastTime: lastTime,
         unread: unread ?? this.unread,
+        lastSender: lastSender,
+        lastSenderName: lastSenderName,
       );
 
   factory Chat.fromJson(Map<String, dynamic> j) => Chat(
@@ -44,5 +50,7 @@ class Chat {
         lastText: j['lastText'] as String?,
         lastTime: j['lastTime'] != null ? DateTime.parse(j['lastTime']) : null,
         unread: j['unread'] ?? 0,
+        lastSender: j['lastSender'] as String?, // Add the lastSender
+        lastSenderName: j['lastSenderName'] as String?, // Add the lastSenderName
       );
 }

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:convert';
-import 'dart:io';
-import '../services/api.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http_parser/http_parser.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../gen_l10n/app_localizations.dart';
+import '../services/api.dart';
+import 'package:flutter/foundation.dart'; // For kIsWeb
 
 class EditApplicationScreen extends StatefulWidget {
   @override
@@ -22,12 +22,15 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
   Map<String, dynamic> documents = {};
   List<String> dormitoryPrices = [];
   List<String> removedDocs = [];
-  final picker = ImagePicker();
-
   bool isLoading = true;
   String? selectedDormCost;
   final parentPhoneCtrl = TextEditingController();
   final entResultCtrl = TextEditingController();
+
+  // Added variables
+  PlatformFile? entCertificateFile; // To store selected ENТ certificate file
+  String? entScore; // To store extracted ENТ score
+  String? gpaValue; // To store GPA for higher courses
 
   @override
   void initState() {
@@ -39,6 +42,7 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
     try {
       final client = RefreshHttpClient();
       final student = await AuthService.getStudentData();
+
       final resApp =
           await client.get(Uri.parse("https://dormmate-back.onrender.com/api/v1/application/"));
       final appData = jsonDecode(utf8.decode(resApp.bodyBytes));
@@ -72,91 +76,33 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
         }
       }
 
-      setState(() {
-        studentData = student;
-        applicationData = appData;
-        evidenceTypes = types;
-        dormitoryPrices = prices;
-        documents = mappedDocs;
-        selectedDormCost = appData['dormitory_cost']?.toString();
-        parentPhoneCtrl.text = appData['parent_phone'] ?? '';
-        entResultCtrl.text = appData['ent_result']?.toString() ?? '';
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          studentData = student;
+          applicationData = appData;
+          evidenceTypes = types;
+          dormitoryPrices = prices;
+          documents = mappedDocs;
+          selectedDormCost = appData['dormitory_cost']?.toString();
+          parentPhoneCtrl.text = appData['parent_phone'] ?? '';
+          entResultCtrl.text = appData['ent_result']?.toString() ?? '';
+          gpaValue = appData['gpa']?.toString() ?? ''; // Fetch GPA for higher courses
+          isLoading = false;
+        });
+      }
     } catch (e) {
       debugPrint("Ошибка: $e");
-    }
-  }
-
-  Future<void> pickFile(String code) async {
-    final result =
-        await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
-    if (result != null && result.files.isNotEmpty) {
-      final file = result.files.first;
-      setState(() => documents[code] = file);
-    }
-  }
-
-  void removeFile(String code) {
-    setState(() {
-      if (documents[code]?['existing'] == true) removedDocs.add(code);
-      documents.remove(code);
-    });
-  }
-
-  Future<void> submitChanges() async {
-    try {
-      final uri = Uri.parse("https://dormmate-back.onrender.com/api/v1/student/application/");
-      final token = await AuthService.getAccessToken();
-      final request = http.MultipartRequest('PATCH', uri)
-        ..headers['Authorization'] = 'Bearer $token';
-
-      request.fields['dormitory_cost'] = selectedDormCost ?? '';
-      request.fields['parent_phone'] = parentPhoneCtrl.text;
-      request.fields['ent_result'] = entResultCtrl.text;
-
-      documents.forEach((code, value) {
-        if (value is PlatformFile) {
-          if (value.bytes != null) {
-            request.files.add(
-              http.MultipartFile.fromBytes(
-                code,
-                value.bytes!,
-                filename: value.name,
-              ),
-            );
-          } else if (value.path != null) {
-            final fileBytes = File(value.path!).readAsBytesSync();
-            request.files.add(
-              http.MultipartFile.fromBytes(
-                code,
-                fileBytes,
-                filename: value.name,
-              ),
-            );
-          }
-        }
-      });
-
-      if (removedDocs.isNotEmpty) {
-        request.fields['deleted_documents'] = jsonEncode(removedDocs);
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
       }
-
-      final response = await request.send();
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        Navigator.pushReplacementNamed(context, '/profile');
-      } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Ошибка: ${response.statusCode}')));
-      }
-    } catch (e) {
-      debugPrint('Ошибка при отправке: $e');
     }
   }
 
-  Widget _buildTextField(String label, String? value, Color cardColor, Color textColor) {
+  Widget _buildTextField(String label, String value, Color cardColor, Color textColor) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 20),
       child: Container(
         decoration: BoxDecoration(
           color: cardColor,
@@ -167,8 +113,9 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(label,
-                style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, color: textColor)),
-            Text(value ?? '-', style: GoogleFonts.montserrat(color: textColor)),
+                style: GoogleFonts.montserrat(
+                    fontWeight: FontWeight.bold, color: textColor, fontSize: 18)),
+            Text(value ?? '-', style: GoogleFonts.montserrat(color: textColor, fontSize: 18)),
           ],
         ),
       ),
@@ -178,13 +125,13 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
   Widget _buildEditableField(
       String label, TextEditingController ctrl, Color cardColor, Color textColor) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 20),
       child: TextField(
         controller: ctrl,
-        style: GoogleFonts.montserrat(color: textColor),
+        style: GoogleFonts.montserrat(color: textColor, fontSize: 18),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: GoogleFonts.montserrat(color: textColor),
+          labelStyle: GoogleFonts.montserrat(color: textColor, fontSize: 18),
           filled: true,
           fillColor: cardColor,
           border: OutlineInputBorder(
@@ -204,7 +151,9 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, color: textColor)),
+          Text(label,
+              style: GoogleFonts.montserrat(
+                  fontWeight: FontWeight.bold, color: textColor, fontSize: 18)),
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -216,33 +165,10 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
               children: [
                 Expanded(
                   child: file == null
-                      ? Text('Файл не выбран', style: GoogleFonts.montserrat(color: Colors.grey))
-                      : file is PlatformFile
-                          ? Text(file.name, style: GoogleFonts.montserrat(color: textColor))
-                          : InkWell(
-                              onTap: () async {
-                                final url = Uri.parse(file['url']);
-                                if (await canLaunchUrl(url)) {
-                                  await launchUrl(url, mode: LaunchMode.externalApplication);
-                                }
-                              },
-                              child: Row(
-                                children: [
-                                  Icon(Icons.picture_as_pdf, color: Colors.red, size: 20),
-                                  SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      file['name'] ?? 'PDF',
-                                      style: GoogleFonts.montserrat(
-                                        color: Colors.red,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                      ? Text('Файл не выбран',
+                          style: GoogleFonts.montserrat(color: Colors.grey, fontSize: 18))
+                      : Text(file.name,
+                          style: GoogleFonts.montserrat(color: textColor, fontSize: 18)),
                 ),
                 IconButton(
                     onPressed: () => removeFile(code), icon: Icon(Icons.delete, color: Colors.red)),
@@ -257,11 +183,164 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    parentPhoneCtrl.dispose();
-    entResultCtrl.dispose();
-    super.dispose();
+  // Method to pick a file
+  Future<void> pickFile(String code) async {
+    final result =
+        await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.first;
+      setState(() => documents[code] = file);
+    }
+  }
+
+  // Method to remove a file
+  void removeFile(String code) {
+    setState(() {
+      if (documents[code]?['existing'] == true) removedDocs.add(code);
+      documents.remove(code);
+    });
+  }
+
+  // Method to pick ENТ certificate and extract score
+  Future<void> pickEntCertificateAndExtractScore() async {
+    final result =
+        await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+    if (result != null && result.files.isNotEmpty) {
+      setState(() {
+        entCertificateFile = result.files.first;
+        entScore = null;
+      });
+
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('access_token');
+        final uri = Uri.parse("https://dormmate-back.onrender.com/api/v1/ent-extract/");
+        final request = http.MultipartRequest('POST', uri)
+          ..headers["Authorization"] = "Bearer $token"
+          ..files.add(
+            http.MultipartFile.fromBytes(
+              'file',
+              entCertificateFile!.bytes!,
+              filename: entCertificateFile!.name,
+              contentType: MediaType('application', 'pdf'),
+            ),
+          );
+        final streamed = await request.send();
+        final response = await http.Response.fromStream(streamed);
+        if (response.statusCode == 200) {
+          final data = jsonDecode(utf8.decode(response.bodyBytes));
+          setState(() {
+            entScore = data['total_score']?.toString();
+          });
+        } else {
+          setState(() {
+            entScore = null;
+          });
+        }
+      } catch (e) {
+        setState(() {
+          entScore = null;
+        });
+      }
+    }
+  }
+
+  // Method to submit changes
+  Future<void> submitChanges() async {
+    final int course = int.tryParse(studentData['course']?.toString() ?? '0') ?? 0;
+    final bool isFirstYear = course == 1;
+
+    if (selectedDormCost == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Выберите стоимость общежития")),
+      );
+      return;
+    }
+    if (isFirstYear && entCertificateFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Загрузите PDF сертификат ЕНТ")),
+      );
+      return;
+    }
+    if (isFirstYear && (entScore == null || entScore!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Не удалось получить балл ЕНТ из файла")),
+      );
+      return;
+    }
+    if (!isFirstYear && (entScore == null || entScore!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Введите GPA")),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      String? token;
+
+      if (kIsWeb) {
+        token = await AuthService.getAccessToken();
+      } else {
+        final prefs = await SharedPreferences.getInstance();
+        token = prefs.getString('access_token');
+      }
+
+      if (token == null || token.isEmpty) {
+        throw Exception("Отсутствует токен доступа");
+      }
+
+      final request = http.MultipartRequest(
+        "POST",
+        Uri.parse("https://dormmate-back.onrender.com/api/v1/create_application/"),
+      )
+        ..fields['dormitory_cost'] = selectedDormCost!
+        ..fields['parent_phone'] = studentData['parent_phone'] ?? ''
+        ..headers["Authorization"] = "Bearer $token";
+
+      if (!isFirstYear) {
+        request.fields['ent_result'] = '0'; // For higher courses, send 0
+      }
+
+      if (isFirstYear && entCertificateFile != null && entCertificateFile!.bytes != null) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'ent_certificate', // key for backend
+            entCertificateFile!.bytes!,
+            filename: entCertificateFile!.name,
+            contentType: MediaType('application', 'pdf'),
+          ),
+        );
+        request.fields['ent_result'] = entScore ?? ''; // Score for first year
+      }
+
+      documents.forEach((key, file) {
+        if (file.bytes != null) {
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              key,
+              file.bytes!,
+              filename: file.name,
+              contentType: MediaType('application', 'pdf'),
+            ),
+          );
+        }
+      });
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+
+      if (response.statusCode != 201) {
+        throw Exception("Ошибка при создании заявки: ${response.statusCode}");
+      }
+
+      Navigator.pushReplacementNamed(context, '/testpage');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Ошибка: $e")));
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 
   @override
@@ -269,76 +348,104 @@ class _EditApplicationScreenState extends State<EditApplicationScreen> {
     final t = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final bgColor = theme.scaffoldBackgroundColor;
-    final cardColor = theme.cardColor;
-    final textColor = isDark ? Colors.white : Colors.black87;
+
+    final Color mainBg = isDark ? const Color(0xFF181825) : const Color(0xfff6f7fa);
+    final Color blockBg = isDark ? const Color(0xFF232338) : Colors.white;
+    final Color mainText = isDark ? Colors.white : Color(0xFF1e2134);
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: mainBg,
       appBar: AppBar(
-        backgroundColor: isDark ? Colors.red.shade700 : Colors.red,
-        foregroundColor: Colors.white,
-        title: Text(t.edit_application, style: GoogleFonts.montserrat()),
+        backgroundColor: blockBg,
+        elevation: 0,
+        title: Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: 'DormMate\n',
+                style: GoogleFonts.montserrat(
+                  color: Color(0xFFD50032),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+              TextSpan(
+                text: 'Edit Application',
+                style: GoogleFonts.montserrat(
+                    color: Color(0xFFD50032).withOpacity(0.85), fontSize: 14),
+              ),
+            ],
+          ),
+          textAlign: TextAlign.center,
+        ),
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+        iconTheme: const IconThemeData(color: Color(0xFFD50032)),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTextField(t.first_name, studentData['first_name'], cardColor, textColor),
-                  _buildTextField(t.last_name, studentData['last_name'], cardColor, textColor),
-                  _buildTextField(
-                      t.course, studentData['course']?.toString(), cardColor, textColor),
-                  _buildTextField(t.gender, studentData['gender'] == 'M' ? t.male : t.female,
-                      cardColor, textColor),
-                  _buildTextField(t.ent_result, studentData['ent_result'], cardColor,
-                      textColor), // просто просмотр
-                  _buildTextField(
-                      t.parent_phone, studentData['parent_phone'], cardColor, textColor),
-                  _buildEditableField(
-                      t.parent_phone, parentPhoneCtrl, cardColor, textColor), // для изменения
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    value: dormitoryPrices.contains(selectedDormCost) ? selectedDormCost : null,
-                    decoration: InputDecoration(
-                      labelText: t.dorm_price_10_months,
-                      labelStyle: GoogleFonts.montserrat(color: textColor),
-                      filled: true,
-                      fillColor: cardColor,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
+              padding: const EdgeInsets.all(24),
+              child: DefaultTextStyle(
+                style: GoogleFonts.montserrat(color: mainText),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildTextField(
+                        t.first_name, studentData['first_name'] ?? '', mainText, blockBg),
+                    _buildTextField(t.last_name, studentData['last_name'] ?? '', mainText, blockBg),
+                    _buildTextField(
+                        t.course, studentData['course']?.toString() ?? '', mainText, blockBg),
+                    _buildTextField(t.gender, studentData['gender'] == 'M' ? t.male : t.female,
+                        mainText, blockBg),
+                    _buildTextField(
+                        t.ent_result, studentData['ent_result'] ?? '', mainText, blockBg),
+                    _buildTextField(
+                        t.parent_phone, studentData['parent_phone'] ?? '', mainText, blockBg),
+                    _buildEditableField(t.parent_phone, parentPhoneCtrl, blockBg, mainText),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: dormitoryPrices.contains(selectedDormCost) ? selectedDormCost : null,
+                      decoration: InputDecoration(
+                        labelText: t.dorm_price_10_months,
+                        labelStyle: GoogleFonts.montserrat(color: mainText),
+                        filled: true,
+                        fillColor: blockBg,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
+                      dropdownColor: blockBg,
+                      style: GoogleFonts.montserrat(color: mainText),
+                      items: dormitoryPrices
+                          .map((cost) => DropdownMenuItem(
+                                value: cost,
+                                child: Text("$cost тг",
+                                    style: GoogleFonts.montserrat(color: mainText)),
+                              ))
+                          .toList(),
+                      onChanged: (val) => setState(() => selectedDormCost = val),
                     ),
-                    dropdownColor: cardColor,
-                    style: GoogleFonts.montserrat(color: textColor),
-                    items: dormitoryPrices
-                        .map((cost) => DropdownMenuItem(
-                            value: cost,
-                            child:
-                                Text("$cost тг", style: GoogleFonts.montserrat(color: textColor))))
-                        .toList(),
-                    onChanged: (val) => setState(() => selectedDormCost = val),
-                  ),
-                  const SizedBox(height: 20),
-                  ...evidenceTypes.map((doc) => _buildFileRow(doc, cardColor, textColor)).toList(),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: submitChanges,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      minimumSize: const Size.fromHeight(48),
+                    const SizedBox(height: 20),
+                    ...evidenceTypes.map((doc) => _buildFileRow(doc, blockBg, mainText)).toList(),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: submitChanges,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        minimumSize: const Size.fromHeight(48),
+                      ),
+                      child:
+                          Text(t.save_changes, style: GoogleFonts.montserrat(color: Colors.white)),
                     ),
-                    child: Text(t.save_changes, style: GoogleFonts.montserrat(color: Colors.white)),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 4),
     );
   }
 }

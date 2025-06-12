@@ -11,6 +11,7 @@ import '../widgets/bottom_navigation_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../gen_l10n/app_localizations.dart';
+import 'edit_application_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -843,16 +844,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Color(0xFFDCE3F6),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Row(
+                            child: Column(
                               children: [
-                                Icon(Icons.access_time, color: Color(0xFF4982d7), size: 20),
-                                SizedBox(width: 8),
-                                Text(
-                                  statusText.isNotEmpty ? statusText : 'На рассмотрении',
-                                  style: GoogleFonts.montserrat(
-                                    color: Color(0xFF1857AD),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15,
+                                Row(
+                                  children: [
+                                    Icon(Icons.access_time, color: Color(0xFF4982d7), size: 20),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      statusText.isNotEmpty ? statusText : 'На рассмотрении',
+                                      style: GoogleFonts.montserrat(
+                                        color: Color(0xFF1857AD),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 12), // Space for the button
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              EditApplicationScreen()), // Navigate to EditApplicationScreen
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        Color(0xFF4982d7), // Use backgroundColor instead of primary
+                                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Редактировать заявку',
+                                    style: GoogleFonts.montserrat(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
                               ],

@@ -10,8 +10,9 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Получаем текущие цвета из темы
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
-    final textColor =
-        Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87;
+    final textColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : const Color.fromARGB(221, 6, 12, 47);
 
     return Scaffold(
       backgroundColor: bgColor,

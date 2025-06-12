@@ -215,7 +215,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             DrawerHeader(
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFFD50032).withOpacity(0.85) : const Color(0xFFFFDEE2),
+                color: isDark ? const Color(0xFFD50032).withOpacity(0.85) : const Color(0xFFD50032),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,7 +227,7 @@ class _HomePageState extends State<HomePage> {
                     style: GoogleFonts.montserrat(
                       fontSize: 21,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: const Color.fromARGB(255, 227, 222, 222),
                     ),
                   ),
                 ],
@@ -247,7 +247,11 @@ class _HomePageState extends State<HomePage> {
                 t.chat,
                 style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w500),
               ),
-              onTap: () => Navigator.pushReplacementNamed(ctx, '/chat'),
+              onTap: () {
+                final token = html.window.localStorage['flutter.access_token'];
+                print('TOKEN BEFORE CHAT: $token');
+                Navigator.pushNamed(context, '/dorm_chats');
+              },
             ),
             ListTile(
               leading: Icon(
@@ -262,18 +266,6 @@ class _HomePageState extends State<HomePage> {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.logout, color: Color.fromARGB(255, 0, 0, 0)),
-              title: Text(
-                t.logout,
-                style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-              onTap: () async {
-                Navigator.pop(ctx);
-                await AuthService.logout();
-                Navigator.pushNamedAndRemoveUntil(ctx, '/login', (route) => false);
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.tips_and_updates_rounded, color: Color(0xFFD50032)),
               title: Text(
                 t.useful_info_students,
@@ -285,15 +277,15 @@ class _HomePageState extends State<HomePage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.chat_bubble_outline, color: Color(0xFFD50032)),
+              leading: const Icon(Icons.logout, color: Color.fromARGB(255, 0, 0, 0)),
               title: Text(
-                t.chat,
+                t.logout,
                 style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w500),
               ),
-              onTap: () {
-                final token = html.window.localStorage['flutter.access_token'];
-                print('TOKEN BEFORE CHAT: $token');
-                Navigator.pushNamed(context, '/dorm_chats');
+              onTap: () async {
+                Navigator.pop(ctx);
+                await AuthService.logout();
+                Navigator.pushNamedAndRemoveUntil(ctx, '/login', (route) => false);
               },
             ),
           ],

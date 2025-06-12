@@ -52,7 +52,7 @@ class DormMateApp extends StatelessWidget {
               theme: ThemeData(
                 brightness: Brightness.light,
                 fontFamily: 'Montserrat',
-                scaffoldBackgroundColor: Colors.white,
+                scaffoldBackgroundColor: const Color.fromARGB(255, 255, 255, 255),
                 appBarTheme: const AppBarTheme(backgroundColor: Color(0xFFD50032)),
                 elevatedButtonTheme: ElevatedButtonThemeData(
                   style: ElevatedButton.styleFrom(
@@ -64,7 +64,7 @@ class DormMateApp extends StatelessWidget {
                 brightness: Brightness.dark,
                 fontFamily: 'Montserrat',
                 scaffoldBackgroundColor: const Color(0xFF181818),
-                appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF222222)),
+                appBarTheme: const AppBarTheme(backgroundColor: Color.fromARGB(255, 29, 33, 62)),
               ),
               localizationsDelegates: const [
                 AppLocalizations.delegate,

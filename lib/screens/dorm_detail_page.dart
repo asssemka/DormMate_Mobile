@@ -105,19 +105,28 @@ class _DormDetailPageState extends State<DormDetailPage> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final bgColor = theme.scaffoldBackgroundColor;
-    final cardColor = theme.cardColor;
-    final mainText = isDark ? Colors.white : Colors.black87;
-    final subText = isDark ? Colors.grey[400]! : Colors.black54;
+    final Color mainBg = isDark ? const Color.fromARGB(255, 32, 32, 51) : const Color(0xfff6f7fa);
+    final Color blockBg = isDark ? const Color(0xFF232338) : Colors.white;
+    final Color borderBlock = isDark ? Color(0xFF25253a) : Color(0xFFeeeeee);
+    final Color mainText = isDark ? Colors.white : Color(0xFF1e2134);
+    final Color subtitle = isDark ? Colors.grey[300]! : Colors.grey[600]!;
+    final Color approvedBg = isDark ? const Color(0xff273C3B) : const Color(0xffeaf4e9);
+    final Color approvedText = isDark ? const Color(0xff82FF9E) : const Color(0xff265c37);
+    final Color warningBg = isDark ? Color(0xFF484251) : Colors.blue.shade100;
+
+    final bgColor = isDark ? mainBg : const Color(0xfff6f7fa); // Цвет фона
+    final cardColor = isDark ? blockBg : Colors.white; // Цвет карточек
+    final mainTextColor = isDark ? Colors.white : Color(0xFF1e2134); // Основной цвет текста
+    final subTextColor = isDark ? Colors.grey[400]! : Colors.black54; // Цвет подстрочных текстов
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
         title: Text(t.dorm_info, style: GoogleFonts.montserrat(color: mainText)),
-        backgroundColor:
-            theme.appBarTheme.backgroundColor ?? (isDark ? Color(0xFF232323) : Color(0xFFD50032)),
+        backgroundColor: theme.appBarTheme.backgroundColor ??
+            (isDark ? Color.fromARGB(255, 32, 34, 52) : Color(0xFFD50032)),
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
@@ -151,25 +160,25 @@ class _DormDetailPageState extends State<DormDetailPage> {
                               ? t.description_not_found
                               : getDormDescription(dorm!, context),
                           mainText,
-                          subText,
+                          subtitle,
                         ),
                         _infoRow(
                           t.dorm_price_10_months,
                           '${dorm?['cost'] ?? '-'} ₸',
                           mainText,
-                          subText,
+                          subtitle,
                         ),
                         _infoRow(
                           t.total_places,
                           '${dorm?['total_places'] ?? '-'}',
                           mainText,
-                          subText,
+                          subtitle,
                         ),
                         _infoRow(
                           t.address,
                           dorm?['address'] ?? t.address_not_specified,
                           mainText,
-                          subText,
+                          subtitle,
                         ),
                       ], cardColor),
                       const SizedBox(height: 24),
