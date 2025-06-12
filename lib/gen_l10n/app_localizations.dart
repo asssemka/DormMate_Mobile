@@ -391,7 +391,7 @@ abstract class AppLocalizations {
   /// No description provided for @attach_payment_screenshot.
   ///
   /// In en, this message translates to:
-  /// **'Attach Payment Screenshot'**
+  /// **'Attach payment screenshot'**
   String get attach_payment_screenshot;
 
   /// No description provided for @upload_success.
@@ -427,7 +427,7 @@ abstract class AppLocalizations {
   /// No description provided for @status_no_application.
   ///
   /// In en, this message translates to:
-  /// **'You have not applied yet.'**
+  /// **'No application found. Please submit an application.'**
   String get status_no_application;
 
   /// No description provided for @go_to_application.
@@ -765,6 +765,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Warning, fine, or eviction depending on the severity.'**
   String get faq_a7;
+
+  /// No description provided for @status_test_not_passed.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t passed the test yet.'**
+  String get status_test_not_passed;
+
+  /// No description provided for @take_test.
+  ///
+  /// In en, this message translates to:
+  /// **'Take the Test'**
+  String get take_test;
+
+  /// No description provided for @status_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Your application is under review.'**
+  String get status_pending;
+
+  /// No description provided for @status_rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Your application was rejected.'**
+  String get status_rejected;
+
+  /// No description provided for @status_awaiting_payment.
+  ///
+  /// In en, this message translates to:
+  /// **'Your application is approved. Please attach your payment screenshot.'**
+  String get status_awaiting_payment;
+
+  /// No description provided for @status_awaiting_order.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment received. Wait for your order.'**
+  String get status_awaiting_order;
+
+  /// No description provided for @status_order.
+  ///
+  /// In en, this message translates to:
+  /// **'Order issued'**
+  String get status_order;
+
+  /// No description provided for @unknown_status.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown status'**
+  String get unknown_status;
+
+  /// No description provided for @noMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages'**
+  String get noMessages;
+
+  /// No description provided for @admin.
+  ///
+  /// In en, this message translates to:
+  /// **'Administrator'**
+  String get admin;
+
+  /// No description provided for @enterMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a message...'**
+  String get enterMessage;
+
+  /// No description provided for @birth_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Birth date'**
+  String get birth_date;
 }
 
 class _AppLocalizationsDelegate

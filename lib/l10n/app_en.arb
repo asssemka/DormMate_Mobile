@@ -118,6 +118,23 @@
   "faq_q6": "What rules must I follow?",
   "faq_a6": "Observe silence, cleanliness, respect for neighbors and property.",
   "faq_q7": "What happens if the rules are violated?",
-  "faq_a7": "Warning, fine, or eviction depending on the severity."
+  "faq_a7": "Warning, fine, or eviction depending on the severity.",
+  "status_no_application": "No application found. Please submit an application.",
+  "go_to_application": "Go to Application",
+  "status_test_not_passed": "You haven't passed the test yet.",
+  "take_test": "Take the Test",
+  "status_pending": "Your application is under review.",
+  "status_rejected": "Your application was rejected.",
+  "status_awaiting_payment": "Your application is approved. Please attach your payment screenshot.",
+  "attach_payment_screenshot": "Attach payment screenshot",
+  "send": "Send",
+  "status_awaiting_order": "Payment received. Wait for your order.",
+  "status_order": "Order issued",
+  "unknown_status": "Unknown status",
+  "noMessages": "No messages",
+  "admin": "Administrator",
+  "enterMessage": "Enter a message...",
+  "birth_date": "Birth date"
+
 
 }

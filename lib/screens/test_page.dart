@@ -43,7 +43,7 @@ class _TestPageState extends State<TestPage> {
     try {
       final client = RefreshHttpClient();
       final response = await client.get(
-        Uri.parse('http://127.0.0.1:8000/api/v1/questionlist'),
+        Uri.parse('https://dormmate-back.onrender.com/api/v1/questionlist'),
       );
       if (response.statusCode == 200) {
         final decoded = jsonDecode(utf8.decode(response.bodyBytes));
@@ -90,7 +90,7 @@ class _TestPageState extends State<TestPage> {
         (i) => answers[i] ?? '',
       );
       final response = await client.post(
-        Uri.parse('http://127.0.0.1:8000/api/v1/test/'),
+        Uri.parse('https://dormmate-back.onrender.com/api/v1/test/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'test_answers': payload}),
       );
@@ -100,9 +100,12 @@ class _TestPageState extends State<TestPage> {
         await Future.delayed(const Duration(seconds: 1));
         Navigator.pushReplacementNamed(context, '/profile');
       } else {
+        // Логируем ошибку с подробностями
+        print("Ошибка отправки: ${response.statusCode}, ${response.body}");
         _showSnackBar('Ошибка отправки: статус ${response.statusCode}');
       }
     } catch (e) {
+      print("Ошибка отправки теста: $e"); // Логируем ошибку
       _showSnackBar('Ошибка отправки: $e');
     } finally {
       setState(() => submitting = false);

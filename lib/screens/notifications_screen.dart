@@ -15,6 +15,7 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
   List<Map<String, dynamic>> notifications = [];
   Timer? timer;
   String? error;
@@ -23,7 +24,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchNotifications();
+    _fetchNotifications(init: true);
     timer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchNotifications());
   }
 
@@ -33,14 +34,44 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchNotifications() async {
+  Future<void> _fetchNotifications({bool init = false}) async {
     try {
       final result = await NotificationsService.getNotifications();
-      setState(() {
-        notifications = result;
-        error = null;
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          error = null;
+          isLoading = false;
+        });
+        // Для анимации появления новых уведомлений
+        if (init) {
+          notifications = List.from(result);
+        } else {
+          final newList = List<Map<String, dynamic>>.from(result);
+          // Добавление новых элементов
+          for (var i = 0; i < newList.length; i++) {
+            if (notifications.length <= i || notifications[i]['id'] != newList[i]['id']) {
+              notifications.insert(i, newList[i]);
+              _listKey.currentState?.insertItem(i, duration: Duration(milliseconds: 300));
+            }
+          }
+          // Удаление исчезнувших
+          for (var i = notifications.length - 1; i >= 0; i--) {
+            if (newList.where((n) => n['id'] == notifications[i]['id']).isEmpty) {
+              final removed = notifications.removeAt(i);
+              _listKey.currentState?.removeItem(
+                i,
+                (context, animation) => _buildAnimatedNotifCard(
+                  context,
+                  removed,
+                  animation,
+                  isDark: Theme.of(context).brightness == Brightness.dark,
+                ),
+                duration: Duration(milliseconds: 250),
+              );
+            }
+          }
+        }
+      }
     } catch (e) {
       setState(() {
         error = 'Ошибка при загрузке уведомлений: $e';
@@ -78,9 +109,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _markAsRead(int id) async {
     try {
       await NotificationsService.markAsRead([id]);
-      setState(() {
-        notifications.removeWhere((n) => n['id'] == id);
-      });
+      final idx = notifications.indexWhere((n) => n['id'] == id);
+      if (idx >= 0) {
+        final removed = notifications.removeAt(idx);
+        _listKey.currentState?.removeItem(
+          idx,
+          (context, animation) => _buildAnimatedNotifCard(
+            context,
+            removed,
+            animation,
+            isDark: Theme.of(context).brightness == Brightness.dark,
+          ),
+          duration: Duration(milliseconds: 300),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ошибка при отметке уведомления: $e')),
@@ -93,6 +135,114 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _markAsRead(id);
   }
 
+  Widget _buildAnimatedNotifCard(
+      BuildContext context, Map<String, dynamic> n, Animation<double> animation,
+      {required bool isDark}) {
+    final t = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final card = theme.cardColor;
+    final textMain = isDark ? Colors.white : Colors.black87;
+    final textSub = isDark ? Colors.grey[400]! : Colors.grey.shade600;
+    final divider = isDark ? Colors.grey[800]! : Colors.grey.shade300;
+    return SizeTransition(
+      sizeFactor: animation,
+      axis: Axis.vertical,
+      child: FadeTransition(
+        opacity: animation,
+        child: Container(
+          decoration: BoxDecoration(
+            color: card,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: divider.withOpacity(0.18),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          margin: const EdgeInsets.only(bottom: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Красная точка если не прочитано (пример анимации статуса)
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD50032).withOpacity(0.13),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.notifications, color: Color(0xFFD50032), size: 26),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      getNotificationText(n, context),
+                      style: GoogleFonts.montserrat(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: textMain,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _formatTime(n['created_at'] ?? ''),
+                      style: GoogleFonts.montserrat(
+                        fontSize: 13,
+                        color: textSub,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                children: [
+                  TextButton(
+                    onPressed: () => _openChat(n['id']),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Color(0xFFD50032),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      t.chat,
+                      style: GoogleFonts.montserrat(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _markAsRead(n['id']),
+                    style: TextButton.styleFrom(
+                      foregroundColor: textSub,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      t.markAsRead,
+                      style: GoogleFonts.montserrat(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
@@ -103,7 +253,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final card = theme.cardColor;
     final textMain = isDark ? Colors.white : Colors.black87;
     final textSub = isDark ? Colors.grey[400]! : Colors.grey.shade600;
-    final divider = isDark ? Colors.grey[800]! : Colors.grey.shade300;
 
     return Scaffold(
       backgroundColor: bg,
@@ -153,104 +302,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           ),
                         ),
                       )
-                    : ListView.separated(
+                    : AnimatedList(
+                        key: _listKey,
                         physics: const BouncingScrollPhysics(),
-                        itemCount: notifications.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final n = notifications[index];
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: card,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: divider.withOpacity(0.18),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFD50032).withOpacity(0.13),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child:
-                                      Icon(Icons.notifications, color: Color(0xFFD50032), size: 26),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        getNotificationText(n, context),
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: textMain,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        _formatTime(n['created_at'] ?? ''),
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 13,
-                                          color: textSub,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  children: [
-                                    TextButton(
-                                      onPressed: () => _openChat(n['id']),
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: Color(0xFFD50032),
-                                        padding:
-                                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        minimumSize: Size.zero,
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                      child: Text(
-                                        t.chat,
-                                        style: GoogleFonts.montserrat(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => _markAsRead(n['id']),
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: textSub,
-                                        padding:
-                                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        minimumSize: Size.zero,
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                      child: Text(
-                                        t.markAsRead,
-                                        style: GoogleFonts.montserrat(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              ],
-                            ),
-                          );
-                        },
+                        initialItemCount: notifications.length,
+                        itemBuilder: (context, index, animation) => _buildAnimatedNotifCard(
+                          context,
+                          notifications[index],
+                          animation,
+                          isDark: isDark,
+                        ),
                       ),
       ),
       bottomNavigationBar: const BottomNavBar(currentIndex: 3),

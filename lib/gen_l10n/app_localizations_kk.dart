@@ -154,7 +154,7 @@ class AppLocalizationsKk extends AppLocalizations {
       'Өтінішіңіз мақұлданды, төлем жасап, түбіртекті осында тіркеңіз.';
 
   @override
-  String get attach_payment_screenshot => 'Төлем скринін тіркеу';
+  String get attach_payment_screenshot => 'Төлем скриншотын тіркеу';
 
   @override
   String get upload_success => 'Скриншот сәтті жүктелді.';
@@ -172,10 +172,10 @@ class AppLocalizationsKk extends AppLocalizations {
   String get select_language => 'Тілді таңдаңыз';
 
   @override
-  String get status_no_application => 'Сіз әлі өтініш берген жоқсыз.';
+  String get status_no_application => 'Өтініш табылмады. Өтінім жіберіңіз.';
 
   @override
-  String get go_to_application => 'Өтінішке өту';
+  String get go_to_application => 'Қолданбаға өту';
 
   @override
   String get passwords => 'Құпиясөздер';
@@ -349,4 +349,41 @@ class AppLocalizationsKk extends AppLocalizations {
   @override
   String get faq_a7 =>
       'Ескерту, айыппұл немесе ауырлық дәрежесіне қарай шығару.';
+
+  @override
+  String get status_test_not_passed => 'Сіз әлі сынақтан өткен жоқсыз.';
+
+  @override
+  String get take_test => 'Тест тапсыру';
+
+  @override
+  String get status_pending => 'Сіздің өтінішіңіз қаралуда.';
+
+  @override
+  String get status_rejected => 'Сіздің өтінішіңіз қабылданбады.';
+
+  @override
+  String get status_awaiting_payment =>
+      'Сіздің өтінішіңіз мақұлданды. Төлем скриншотыңызды тіркеңіз.';
+
+  @override
+  String get status_awaiting_order => 'Төлем алынды. Тапсырысыңызды күтіңіз.';
+
+  @override
+  String get status_order => 'Тапсырыс берілді';
+
+  @override
+  String get unknown_status => 'Белгісіз күй';
+
+  @override
+  String get noMessages => 'Хабарламалар жоқ';
+
+  @override
+  String get admin => 'Әкімші';
+
+  @override
+  String get enterMessage => 'Хабарлама енгізіңіз…';
+
+  @override
+  String get birth_date => 'Туылған күні:';
 }

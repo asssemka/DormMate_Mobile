@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/api.dart';
 import '../widgets/banner_carousel.dart';
-import '../widgets/useful_info_page.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../gen_l10n/app_localizations.dart';
 import 'dart:html' as html;
@@ -53,22 +52,12 @@ class _HomePageState extends State<HomePage> {
         title: Text(
           'DormMate',
           style: GoogleFonts.montserrat(
-            fontSize: 26,
+            fontSize: 27,
             fontWeight: FontWeight.bold,
             color: Color(0xFFD50032),
             letterSpacing: 1.2,
           ),
         ),
-        // actions: [
-        //   IconButton(
-        //     icon: Icon(
-        //       widget.themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode,
-        //       color: Color(0xFFD50032),
-        //     ),
-        //     tooltip: widget.themeMode == ThemeMode.dark ? "Светлая тема" : "Тёмная тема",
-        //     onPressed: widget.onToggleTheme,
-        //   ),
-        // ],
         centerTitle: true,
       );
 
@@ -92,6 +81,130 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _showUsefulInfoModal(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF232338) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1e2134);
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.36),
+      builder: (ctx) => Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 500,
+            maxHeight: MediaQuery.of(context).size.height * 0.87,
+          ),
+          child: Material(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(26),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 30),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.tips_and_updates_rounded, color: Color(0xFFD50032), size: 27),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          AppLocalizations.of(context)!.useful_info_students,
+                          style: GoogleFonts.montserrat(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: Colors.red.shade300, size: 27),
+                        onPressed: () => Navigator.of(context).pop(),
+                        tooltip: 'Закрыть',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Divider(height: 1, color: isDark ? Colors.white10 : Colors.black12),
+                  const SizedBox(height: 18),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: "🏠 Как получить место?\n",
+                                  style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 17,
+                                    color: textColor,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: "1. Заполните заявку, приложите документы.\n"
+                                      "2. Дождитесь статуса 'Одобрено' — появится доступ к ордеру.\n\n",
+                                  style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 15,
+                                    color: textColor,
+                                    height: 1.55,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: "💬 Вопросы? \n",
+                                  style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 17,
+                                    color: textColor,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: "Пишите в чат поддержки DormMate, мы быстро поможем!\n\n",
+                                  style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 15,
+                                    color: textColor,
+                                    height: 1.5,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: "⚡ Советы:\n",
+                                  style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 17,
+                                    color: textColor,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: "• Не забывайте оплачивать проживание вовремя.\n"
+                                      "• Соблюдайте правила (они есть прямо в приложении!).\n"
+                                      "• Любые вопросы — не стесняйтесь, мы всегда на связи ❤️",
+                                  style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 15,
+                                    color: textColor,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Drawer _buildDrawer(BuildContext ctx) {
     final t = AppLocalizations.of(ctx)!;
     final isDark = Theme.of(ctx).brightness == Brightness.dark;
@@ -101,16 +214,18 @@ class _HomePageState extends State<HomePage> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(color: Color.fromARGB(255, 255, 174, 193)),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFFD50032).withOpacity(0.85) : const Color(0xFFFFDEE2),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.account_circle, color: Colors.white, size: 50),
+                  const Icon(Icons.account_circle, color: Colors.white, size: 54),
                   const SizedBox(height: 12),
                   Text(
                     t.menu,
                     style: GoogleFonts.montserrat(
-                      fontSize: 20,
+                      fontSize: 21,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
@@ -134,7 +249,6 @@ class _HomePageState extends State<HomePage> {
               ),
               onTap: () => Navigator.pushReplacementNamed(ctx, '/chat'),
             ),
-            // Кнопка смены темы
             ListTile(
               leading: Icon(
                 isDark ? Icons.light_mode : Icons.dark_mode,
@@ -157,6 +271,17 @@ class _HomePageState extends State<HomePage> {
                 Navigator.pop(ctx);
                 await AuthService.logout();
                 Navigator.pushNamedAndRemoveUntil(ctx, '/login', (route) => false);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.tips_and_updates_rounded, color: Color(0xFFD50032)),
+              title: Text(
+                t.useful_info_students,
+                style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showUsefulInfoModal(ctx);
               },
             ),
             ListTile(
@@ -184,27 +309,37 @@ class _HomePageState extends State<HomePage> {
         (images != null && images.isNotEmpty) ? images[0]['image'] as String : 'assets/banner.png';
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? Color(0xFF232323) : (isEven ? Colors.grey[100]! : Colors.white);
-    final textColor = isDark ? Colors.white : Colors.black87;
+    // Используем цвета из профиля
+    final cardBg = isDark ? Color(0xFF232338) : Colors.white;
+    final borderBlock = isDark ? Color(0xFF25253a) : Color(0xFFeeeeee);
+    final textColor = isDark ? Colors.white : Color(0xFF1e2134);
     final subtitleColor = isDark ? Colors.grey[300] : Colors.grey[600];
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 5,
+      margin: const EdgeInsets.symmetric(horizontal: 18),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      elevation: isDark ? 4 : 7,
+      shadowColor: isDark ? Colors.black54 : Colors.grey[200],
       color: cardBg,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         onTap: () => Navigator.pushNamed(context, '/dorm/${dorm['id']}'),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(15),
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(imageUrl, width: 90, height: 90, fit: BoxFit.cover),
+                borderRadius: BorderRadius.circular(13),
+                child: Image.network(
+                  imageUrl,
+                  width: 90,
+                  height: 90,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      Container(color: Colors.grey[200], width: 90, height: 90),
+                ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 17),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,21 +352,19 @@ class _HomePageState extends State<HomePage> {
                         color: textColor,
                       ),
                     ),
-
-                    const SizedBox(height: 6),
-                    Text('₸${dorm['cost']}',
+                    const SizedBox(height: 7),
+                    Text('₸${dorm['cost']} / мес',
                         style: GoogleFonts.montserrat(
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
-                          color: textColor,
+                          color: Color(0xFFD50032),
                         )),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 7),
                     Text(dorm['address'] as String? ?? '',
                         style: GoogleFonts.montserrat(fontSize: 14, color: subtitleColor)),
-                    const SizedBox(height: 8),
-                    // Удобства с иконками
+                    const SizedBox(height: 7),
                     Wrap(
-                      spacing: 16,
+                      spacing: 18,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Row(
@@ -286,7 +419,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildFAQSection(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final titleColor = isDark ? Colors.white : Colors.black87;
+    final titleColor = isDark ? Colors.white : Color(0xFF1e2134);
     final bodyColor = isDark ? Colors.grey[300] : Colors.black54;
 
     final faqItems = [
@@ -308,11 +441,12 @@ class _HomePageState extends State<HomePage> {
       },
       {
         'question': t.faq_q6 ?? 'Какие правила проживания я должен соблюдать?',
-        'answer': t.faq_a6 ?? 'Соблюдение тишины, чистоты, уважение к соседям и имуществу.',
+        'answer': t.faq_a6 ?? 'Соблюдайте тишину, чистоту, уважайте соседей и имущество общежития.',
       },
       {
         'question': t.faq_q7 ?? 'Что произойдёт при нарушении правил?',
-        'answer': t.faq_a7 ?? 'Предупреждение, штраф или выселение в зависимости от серьёзности.',
+        'answer': t.faq_a7 ??
+            'Сначала предупреждение, далее — штраф или даже выселение, если нарушение серьёзное.',
       },
     ];
 
@@ -327,18 +461,29 @@ class _HomePageState extends State<HomePage> {
                 fontSize: 22, fontWeight: FontWeight.bold, color: titleColor),
           ),
           const SizedBox(height: 12),
-          ...faqItems.map((item) => ExpansionTile(
-                collapsedIconColor: titleColor,
-                iconColor: titleColor,
-                title: Text(item['question']!,
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, color: titleColor)),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-                    child: Text(item['answer']!,
-                        style: GoogleFonts.montserrat(fontSize: 14, color: bodyColor)),
-                  ),
-                ],
+          ...faqItems.map((item) => Theme(
+                data: Theme.of(context).copyWith(
+                  dividerColor: Colors.transparent,
+                  splashColor: Colors.transparent,
+                  highlightColor: Colors.transparent,
+                ),
+                child: ExpansionTile(
+                  collapsedIconColor: titleColor,
+                  iconColor: titleColor,
+                  backgroundColor: Colors.transparent,
+                  childrenPadding: EdgeInsets.zero,
+                  tilePadding: const EdgeInsets.symmetric(horizontal: 6),
+                  title: Text(item['question']!,
+                      style:
+                          GoogleFonts.montserrat(fontWeight: FontWeight.w600, color: titleColor)),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 10, right: 10, bottom: 12),
+                      child: Text(item['answer']!,
+                          style: GoogleFonts.montserrat(fontSize: 15, color: bodyColor)),
+                    ),
+                  ],
+                ),
               )),
         ],
       ),
@@ -350,16 +495,19 @@ class _HomePageState extends State<HomePage> {
     final t = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Основные цвета — ровно как в профиле:
+    final Color mainBg = isDark ? const Color(0xFF181825) : const Color(0xfff6f7fa);
+
     return Scaffold(
       appBar: _buildHeader(context),
       drawer: _buildDrawer(context),
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: mainBg,
       body: ListView(
         children: [
           Builder(
             builder: (context) {
               final screenWidth = MediaQuery.of(context).size.width;
-              final bannerHeight = screenWidth * 9 / 16; // Соотношение 16:9
+              final bannerHeight = screenWidth * 9 / 16;
               return SizedBox(
                 height: bannerHeight,
                 child: const BannerCarousel(),
@@ -369,31 +517,37 @@ class _HomePageState extends State<HomePage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => UsefulInfoPage()),
-                );
-              },
+              onPressed: () => _showUsefulInfoModal(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFD50032), // Всегда красная!
+                backgroundColor: Color(0xFFD50032),
                 foregroundColor: Colors.white,
-                shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 18),
                 textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.w700),
+                elevation: 4,
+                shadowColor: isDark ? Colors.black45 : Colors.grey.shade200,
               ),
-              child: Text(t.useful_info_students),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.tips_and_updates_rounded, size: 23, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(t.useful_info_students),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 26),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Text(
               t.our_dormitories,
               style: GoogleFonts.montserrat(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
+                color: isDark ? Colors.white : Color(0xFF1e2134),
               ),
             ),
           ),
@@ -402,7 +556,7 @@ class _HomePageState extends State<HomePage> {
             final i = entry.key;
             final dorm = entry.value;
             return Padding(
-              padding: const EdgeInsets.only(bottom: 20), // Отступ между карточками
+              padding: const EdgeInsets.only(bottom: 22),
               child: _buildDormCard(dorm, i % 2 == 0, context),
             );
           }).toList(),

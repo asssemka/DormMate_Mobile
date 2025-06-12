@@ -75,14 +75,15 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Widget _logo() => Padding(
+  Widget _logo(Color mainText) => Padding(
         padding: EdgeInsets.only(top: 60.h, bottom: 40.h),
         child: Text(
           'DORM MATE',
           style: GoogleFonts.montserrat(
             fontSize: 42.sp,
             fontWeight: FontWeight.w900,
-            color: const Color(0xFFD50032),
+            color: mainText,
+            letterSpacing: 1.1,
           ),
         ),
       );
@@ -93,20 +94,36 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     bool obscure = false,
     Widget? suffixIcon,
+    required bool isDark,
   }) {
+    final fieldColor = isDark ? const Color(0xFF232338) : Colors.white.withOpacity(0.85);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final hintColor = isDark ? Colors.white70 : Colors.black45;
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
+        color: fieldColor,
         borderRadius: BorderRadius.circular(25),
+        boxShadow: isDark
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.17),
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ]
+            : [],
       ),
       child: TextField(
         controller: controller,
         obscureText: obscure,
+        style: GoogleFonts.montserrat(color: textColor),
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.black87),
+          prefixIcon: Icon(icon, color: hintColor),
           suffixIcon: suffixIcon,
           hintText: hint,
+          hintStyle: GoogleFonts.montserrat(color: hintColor),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
@@ -116,6 +133,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final mainText = const Color(0xFFD50032);
+
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
@@ -124,28 +145,33 @@ class _LoginScreenState extends State<LoginScreen> {
             'assets/dorm_background.png',
             fit: BoxFit.cover,
           ),
-          Container(color: Colors.white.withOpacity(0.5)),
+          // Темная или светлая прозрачная вуаль
+          Container(
+            color: isDark ? Colors.black.withOpacity(0.30) : Colors.white.withOpacity(0.50),
+          ),
           Center(
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 40.w),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _logo(),
+                  _logo(mainText),
                   _textField(
                     controller: _loginCtr,
                     hint: 'Login',
                     icon: Icons.person,
+                    isDark: isDark,
                   ),
                   _textField(
                     controller: _passCtr,
                     hint: 'Password',
                     icon: Icons.lock,
                     obscure: !_showPassword,
+                    isDark: isDark,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _showPassword ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.black54,
+                        color: isDark ? Colors.white54 : Colors.black54,
                       ),
                       onPressed: () {
                         setState(() {
@@ -157,13 +183,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   if (_error != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
-                      child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                      child: Text(_error!,
+                          style: GoogleFonts.montserrat(
+                              color: Colors.redAccent, fontWeight: FontWeight.w600)),
                     ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _loading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD50032),
+                      backgroundColor: mainText,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
                       ),

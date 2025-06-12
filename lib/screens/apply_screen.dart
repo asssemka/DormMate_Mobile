@@ -8,6 +8,7 @@ import 'package:http_parser/http_parser.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../gen_l10n/app_localizations.dart';
 import '../services/api.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApplyScreen extends StatefulWidget {
   @override
@@ -164,9 +165,19 @@ class _ApplyScreenState extends State<ApplyScreen> {
     setState(() => isLoading = true);
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('access_token');
-      if (token == null) throw Exception("Отсутствует токен доступа");
+      String? token;
+
+      // Проверка на веб или мобильное приложение
+      if (kIsWeb) {
+        token = await AuthService.getAccessToken();
+      } else {
+        final prefs = await SharedPreferences.getInstance();
+        token = prefs.getString('access_token');
+      }
+
+      if (token == null || token.isEmpty) {
+        throw Exception("Отсутствует токен доступа");
+      }
 
       final request = http.MultipartRequest(
         "POST",
@@ -176,9 +187,9 @@ class _ApplyScreenState extends State<ApplyScreen> {
         ..fields['parent_phone'] = studentData['parent_phone'] ?? ''
         ..headers["Authorization"] = "Bearer $token";
 
-      // GPA для 2-4 курса
+      // Для 2-4 курса всегда ставим 0 для ent_result, так как для них это поле не учитывается
       if (!isFirstYear) {
-        request.fields['ent_result'] = gpaValue ?? '';
+        request.fields['ent_result'] = '0'; // Для старших курсов отправляем 0
       }
 
       // Для 1 курса — файл сертификата и балл
@@ -191,7 +202,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
             contentType: MediaType('application', 'pdf'),
           ),
         );
-        request.fields['ent_result'] = entScore ?? '';
+        request.fields['ent_result'] = entScore ?? ''; // Балл для 1 курса
       }
 
       // Остальные документы (кроме ent_certificate)
@@ -212,6 +223,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
       final response = await http.Response.fromStream(streamed);
 
       if (response.statusCode != 201) {
+        print("Ошибка при создании заявки: ${response.statusCode}");
+        print("Ответ от сервера: ${response.body}");
         throw Exception("Ошибка при создании заявки: ${response.statusCode}");
       }
 
@@ -222,6 +235,155 @@ class _ApplyScreenState extends State<ApplyScreen> {
       setState(() => isLoading = false);
     }
   }
+
+  // Widget _buildTextField(
+  //   String label,
+  //   String value,
+  //   Color textColor,
+  //   Color fillColor,
+  //   bool editable, {
+  //   void Function(String)? onChanged,
+  //   TextInputType? keyboardType,
+  // }) {
+  //   return Padding(
+  //     padding: const EdgeInsets.only(bottom: 16),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(label, style: GoogleFonts.montserrat(fontSize: 14, color: textColor)),
+  //         const SizedBox(height: 6),
+  //         TextFormField(
+  //           initialValue: value,
+  //           readOnly: !editable,
+  //           onChanged: onChanged,
+  //           keyboardType: keyboardType,
+  //           style: GoogleFonts.montserrat(color: textColor),
+  //           decoration: InputDecoration(
+  //             filled: true,
+  //             fillColor: fillColor,
+  //             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+  //             border: OutlineInputBorder(
+  //               borderRadius: BorderRadius.circular(8),
+  //               borderSide: BorderSide.none,
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  // Widget _buildEntCertificateBlock(Color inputBg, Color textMain) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Text(
+  //         "ЕНТ балл (автоматически):",
+  //         style: GoogleFonts.montserrat(
+  //           fontSize: 14,
+  //           color: textMain,
+  //           fontWeight: FontWeight.w500,
+  //         ),
+  //       ),
+  //       const SizedBox(height: 6),
+  //       TextFormField(
+  //         readOnly: true,
+  //         controller: TextEditingController(text: entScore ?? ''),
+  //         decoration: InputDecoration(
+  //           hintText: "Балл появится после загрузки PDF",
+  //           filled: true,
+  //           fillColor: inputBg,
+  //           border: OutlineInputBorder(
+  //             borderRadius: BorderRadius.circular(8),
+  //             borderSide: BorderSide.none,
+  //           ),
+  //         ),
+  //         style: GoogleFonts.montserrat(color: textMain),
+  //       ),
+  //       const SizedBox(height: 10),
+  //       ElevatedButton.icon(
+  //         onPressed: pickEntCertificateAndExtractScore,
+  //         icon: const Icon(Icons.picture_as_pdf),
+  //         label: Text(
+  //           entCertificateFile == null
+  //               ? "Выбрать PDF сертификат"
+  //               : "Файл прикреплён: ${entCertificateFile!.name}",
+  //           style: GoogleFonts.montserrat(color: Colors.white),
+  //           overflow: TextOverflow.ellipsis,
+  //         ),
+  //         style: ElevatedButton.styleFrom(
+  //           backgroundColor: entCertificateFile == null ? Colors.blue : Colors.green,
+  //           foregroundColor: Colors.white,
+  //           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+  //           minimumSize: const Size.fromHeight(45),
+  //         ),
+  //       ),
+  //       if (entCertificateFile != null)
+  //         Padding(
+  //           padding: const EdgeInsets.only(top: 4),
+  //           child: TextButton.icon(
+  //             onPressed: removeEntCertificate,
+  //             icon: const Icon(Icons.delete, color: Colors.red),
+  //             label: Text('Удалить файл', style: TextStyle(color: Colors.red)),
+  //           ),
+  //         ),
+  //       if (entExtractError != null)
+  //         Padding(
+  //           padding: const EdgeInsets.only(top: 8),
+  //           child: Text(
+  //             entExtractError!,
+  //             style: TextStyle(color: Colors.red),
+  //           ),
+  //         ),
+  //       const SizedBox(height: 16),
+  //     ],
+  //   );
+  // }
+
+  // Widget _buildFileUploadSectionWithTranslation(
+  //   AppLocalizations t,
+  //   bool isDark,
+  //   Color blockBg,
+  //   Color textMain,
+  //   bool isFirstYear,
+  // ) {
+  //   return AnimatedCrossFade(
+  //     firstChild: const SizedBox.shrink(),
+  //     secondChild: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         ...evidenceTypes.where((doc) => doc['code'] != 'ent_certificate').map((doc) {
+  //           final code = doc['code'];
+  //           final label = doc['label'] ?? doc['name'];
+  //           final file = documents[code];
+  //           return Padding(
+  //             padding: const EdgeInsets.only(top: 12),
+  //             child: ElevatedButton(
+  //               onPressed: () => pickFile(code),
+  //               style: ElevatedButton.styleFrom(
+  //                 backgroundColor: file == null
+  //                     ? (isDark ? Colors.blueGrey : Colors.blue)
+  //                     : (isDark ? Colors.green.shade700 : Colors.green),
+  //                 foregroundColor: Colors.white,
+  //                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+  //                 minimumSize: const Size.fromHeight(45),
+  //               ),
+  //               child: Text(
+  //                 file == null
+  //                     ? "${t.upload} $label"
+  //                     : "${t.file_attached ?? 'Файл прикреплён'}: ${file.name}",
+  //                 style: GoogleFonts.montserrat(color: Colors.white),
+  //                 overflow: TextOverflow.ellipsis,
+  //               ),
+  //             ),
+  //           );
+  //         }).toList(),
+  //       ],
+  //     ),
+  //     crossFadeState: showDocuments ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+  //     duration: const Duration(milliseconds: 300),
+  //   );
+  // }
 
   Widget _buildTextField(
     String label,
@@ -237,20 +399,22 @@ class _ApplyScreenState extends State<ApplyScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: GoogleFonts.montserrat(fontSize: 14, color: textColor)),
+          Text(label,
+              style: GoogleFonts.montserrat(
+                  fontSize: 15, color: textColor, fontWeight: FontWeight.w500)),
           const SizedBox(height: 6),
           TextFormField(
             initialValue: value,
             readOnly: !editable,
             onChanged: onChanged,
             keyboardType: keyboardType,
-            style: GoogleFonts.montserrat(color: textColor),
+            style: GoogleFonts.montserrat(color: textColor, fontSize: 16),
             decoration: InputDecoration(
               filled: true,
               fillColor: fillColor,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
             ),
@@ -264,14 +428,9 @@ class _ApplyScreenState extends State<ApplyScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "ЕНТ балл (автоматически):",
-          style: GoogleFonts.montserrat(
-            fontSize: 14,
-            color: textMain,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        Text("ЕНТ балл (автоматически):",
+            style:
+                GoogleFonts.montserrat(fontSize: 15, color: textMain, fontWeight: FontWeight.w500)),
         const SizedBox(height: 6),
         TextFormField(
           readOnly: true,
@@ -281,11 +440,11 @@ class _ApplyScreenState extends State<ApplyScreen> {
             filled: true,
             fillColor: inputBg,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
             ),
           ),
-          style: GoogleFonts.montserrat(color: textMain),
+          style: GoogleFonts.montserrat(color: textMain, fontSize: 16),
         ),
         const SizedBox(height: 10),
         ElevatedButton.icon(
@@ -301,7 +460,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: entCertificateFile == null ? Colors.blue : Colors.green,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             minimumSize: const Size.fromHeight(45),
           ),
         ),
@@ -311,16 +470,13 @@ class _ApplyScreenState extends State<ApplyScreen> {
             child: TextButton.icon(
               onPressed: removeEntCertificate,
               icon: const Icon(Icons.delete, color: Colors.red),
-              label: Text('Удалить файл', style: TextStyle(color: Colors.red)),
+              label: Text('Удалить файл', style: GoogleFonts.montserrat(color: Colors.red)),
             ),
           ),
         if (entExtractError != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              entExtractError!,
-              style: TextStyle(color: Colors.red),
-            ),
+            child: Text(entExtractError!, style: GoogleFonts.montserrat(color: Colors.red)),
           ),
         const SizedBox(height: 16),
       ],
@@ -352,15 +508,24 @@ class _ApplyScreenState extends State<ApplyScreen> {
                       ? (isDark ? Colors.blueGrey : Colors.blue)
                       : (isDark ? Colors.green.shade700 : Colors.green),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   minimumSize: const Size.fromHeight(45),
                 ),
-                child: Text(
-                  file == null
-                      ? "${t.upload} $label"
-                      : "${t.file_attached ?? 'Файл прикреплён'}: ${file.name}",
-                  style: GoogleFonts.montserrat(color: Colors.white),
-                  overflow: TextOverflow.ellipsis,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        file == null
+                            ? "${t.upload} $label"
+                            : "${t.file_attached ?? 'Файл прикреплён'}: ${file.name}",
+                        style: GoogleFonts.montserrat(
+                            color: Colors.white, fontWeight: FontWeight.w500),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (file != null) Icon(Icons.check_circle, color: Colors.white, size: 21)
+                  ],
                 ),
               ),
             );
@@ -368,7 +533,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
         ],
       ),
       crossFadeState: showDocuments ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 260),
     );
   }
 
@@ -377,10 +542,10 @@ class _ApplyScreenState extends State<ApplyScreen> {
     final t = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final mainBg = Theme.of(context).scaffoldBackgroundColor;
-    final blockBg = Theme.of(context).cardColor;
-    final textMain = isDark ? Colors.white : Colors.black87;
-    final inputBg = isDark ? Color(0xFF22232A) : Colors.grey.shade200;
+    final mainBg = isDark ? const Color(0xFF181825) : const Color(0xfff6f7fa);
+    final blockBg = isDark ? const Color(0xFF232338) : Colors.white;
+    final textMain = isDark ? Colors.white : const Color(0xFF1e2134);
+    final inputBg = isDark ? const Color(0xFF22232A) : Colors.grey.shade200;
 
     final int course = int.tryParse(studentData['course']?.toString() ?? '0') ?? 0;
     final bool isFirstYear = course == 1;
@@ -412,7 +577,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
         ),
         centerTitle: true,
         automaticallyImplyLeading: false,
-        iconTheme: IconThemeData(color: Color(0xFFD50032)),
+        iconTheme: const IconThemeData(color: Color(0xFFD50032)),
       ),
       body: studentData.isEmpty
           ? const Center(child: CircularProgressIndicator())
@@ -433,14 +598,18 @@ class _ApplyScreenState extends State<ApplyScreen> {
                         t.parent_phone, studentData['parent_phone'] ?? '', textMain, inputBg, true),
                     _buildTextField(
                         t.gender,
-                        studentData['gender'] == 'M' ? t.male ?? 'Мужской' : t.female,
+                        studentData['gender'] == 'M'
+                            ? (t.male ?? 'Мужской')
+                            : (t.female ?? 'Женский'),
                         textMain,
                         inputBg,
                         false),
-                    _buildTextField(t.dorm_price_10_months, studentData['birth_date'] ?? '',
-                        textMain, inputBg, false),
-
-                    // ==== Курс-специфичные поля ====
+                    _buildTextField(
+                        t.birth_date, // <= Добавил словарь
+                        studentData['birth_date'] ?? '',
+                        textMain,
+                        inputBg,
+                        false),
                     if (!isFirstYear)
                       _buildTextField(
                         "GPA",
@@ -449,26 +618,26 @@ class _ApplyScreenState extends State<ApplyScreen> {
                         inputBg,
                         true,
                         onChanged: (val) => gpaValue = val,
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       ),
-
                     if (isFirstYear) ...[
                       const SizedBox(height: 16),
                       _buildEntCertificateBlock(inputBg, textMain),
                     ],
-
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       value: selectedDormCost,
                       decoration: InputDecoration(
                         labelText: t.dorm_price_10_months,
-                        labelStyle: GoogleFonts.montserrat(color: textMain),
+                        labelStyle:
+                            GoogleFonts.montserrat(color: textMain, fontWeight: FontWeight.w500),
                         filled: true,
                         fillColor: inputBg,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
                       ),
                       dropdownColor: blockBg,
                       items: dormitoryPrices
@@ -482,18 +651,21 @@ class _ApplyScreenState extends State<ApplyScreen> {
                           .toList(),
                       onChanged: (value) => setState(() => selectedDormCost = value),
                     ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
+                    const SizedBox(height: 22),
+                    ElevatedButton.icon(
                       onPressed: () => setState(() => showDocuments = !showDocuments),
+                      icon: Icon(showDocuments ? Icons.remove : Icons.add,
+                          color: Colors.white, size: 22),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFFD50032),
                         foregroundColor: Colors.white,
-                        shape: const StadiumBorder(),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         minimumSize: const Size.fromHeight(48),
+                        textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
                       ),
-                      child: Text(
+                      label: Text(
                         showDocuments ? t.hide : t.show,
-                        style: GoogleFonts.montserrat(color: Colors.white),
+                        style: GoogleFonts.montserrat(fontSize: 16, color: Colors.white),
                       ),
                     ),
                     _buildFileUploadSectionWithTranslation(
@@ -504,8 +676,10 @@ class _ApplyScreenState extends State<ApplyScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
-                        shape: const StadiumBorder(),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         minimumSize: const Size.fromHeight(48),
+                        textStyle:
+                            GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)

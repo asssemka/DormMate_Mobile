@@ -74,7 +74,7 @@ class _DormDetailPageState extends State<DormDetailPage> {
   Future<void> fetchDorm() async {
     try {
       final response = await http.get(
-        Uri.parse('http://127.0.0.1:8000/api/v1/dorms/${widget.dormId}/'),
+        Uri.parse('https://dormmate-back.onrender.com/api/v1/dorms/${widget.dormId}/'),
       );
 
       if (response.statusCode == 200) {

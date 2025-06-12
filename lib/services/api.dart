@@ -8,6 +8,7 @@ import 'package:dio/dio.dart';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
+import 'package:http_parser/http_parser.dart';
 
 const String djangoBaseUrl = "https://dormmate-back.onrender.com/api/v1/";
 const String goBaseUrl = "https://student-chats.onrender.com/api/";
@@ -16,74 +17,69 @@ const String goBaseUrl = "https://student-chats.onrender.com/api/";
 /// При первом 401 делает POST /token/refresh/ и, если успешно, повторяет запрос.
 class RefreshHttpClient extends http.BaseClient {
   final http.Client _inner = http.Client();
-  final String baseUrl = "djangoBaseUrl/api/v1/";
 
   @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final prefs = await SharedPreferences.getInstance();
-    final accessToken = prefs.getString('access_token');
+  Future<http.StreamedResponse> send(http.BaseRequest req) async {
+    String? access;
+    String? refresh;
 
-    // Добавляем заголовок Authorization, если токен есть
-    if (accessToken != null) {
-      request.headers["Authorization"] = "Bearer $accessToken";
+    if (kIsWeb) {
+      access = html.window.localStorage['flutter.access_token'];
+      refresh = html.window.localStorage['flutter.refresh_token'];
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      access = prefs.getString('access_token');
+      refresh = prefs.getString('refresh_token');
     }
 
-    // Делаем запрос
-    var response = await _inner.send(request);
-
-    // Если сервер ответил 401, а X-Retry ещё нет
-    if (response.statusCode == 401 && !request.headers.containsKey("X-Retry")) {
-      final refreshToken = prefs.getString('refresh_token');
-      if (refreshToken != null) {
-        // Пробуем обновить токен
-        final refreshResponse = await http.post(
-          Uri.parse("${baseUrl}token/refresh/"),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode({"refresh": refreshToken}),
-        );
-
-        if (refreshResponse.statusCode == 200) {
-          // Сохраняем новый access
-          final data = jsonDecode(refreshResponse.body);
-          final newAccess = data['access'];
-          if (newAccess != null) {
-            await prefs.setString('access_token', newAccess);
-
-            // Повторяем запрос c новым токеном, добавляем флаг X-Retry
-            final newRequest = _cloneRequest(request);
-            newRequest.headers["Authorization"] = "Bearer $newAccess";
-            newRequest.headers["X-Retry"] = "true";
-
-            response = await _inner.send(newRequest);
-          }
-        } else {
-          // refresh не сработал, логика: разлогиниваемся
-          await prefs.clear();
-        }
-      }
+    if (access != null && access.isNotEmpty) {
+      req.headers['Authorization'] = 'Bearer $access';
     }
-    return response;
+
+    final resp = await _inner.send(req);
+    if (resp.statusCode != 401 || refresh == null) return resp;
+
+    // ---------- пытаемся refresh ----------
+    final r = await http.post(
+      Uri.parse('${djangoBaseUrl}token/refresh/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'refresh': refresh}),
+    );
+    if (r.statusCode != 200) return resp;
+
+    final newAccess = jsonDecode(r.body)['access'] as String;
+
+    // сохраняем новый access
+    if (kIsWeb) {
+      html.window.localStorage['flutter.access_token'] = newAccess;
+    } else {
+      (await SharedPreferences.getInstance()).setString('access_token', newAccess);
+    }
+
+    return _inner.send(_clone(req, newAccess));
   }
 
-  /// Клонируем исходный запрос, чтобы повторно отправить его
-  http.BaseRequest _cloneRequest(http.BaseRequest original) {
+  /// Клонируем исходный запрос с новым JWT-заголовком
+  http.BaseRequest _clone(http.BaseRequest original, String token) {
     if (original is http.Request) {
-      final newRequest = http.Request(original.method, original.url);
-      newRequest.headers.addAll(original.headers);
-      newRequest.bodyBytes = original.bodyBytes;
-      return newRequest;
-    } else if (original is http.MultipartRequest) {
-      final newRequest = http.MultipartRequest(original.method, original.url);
-      newRequest.headers.addAll(original.headers);
-      newRequest.fields.addAll(original.fields);
-      newRequest.files.addAll(original.files);
-      return newRequest;
+      final r = http.Request(original.method, original.url)
+        ..bodyBytes = original.bodyBytes
+        ..headers.addAll(original.headers)
+        ..headers['Authorization'] = 'Bearer $token';
+      return r;
     }
-    throw Exception("Неизвестный тип запроса: ${original.runtimeType}");
+    if (original is http.MultipartRequest) {
+      final r = http.MultipartRequest(original.method, original.url)
+        ..fields.addAll(original.fields)
+        ..files.addAll(original.files)
+        ..headers.addAll(original.headers)
+        ..headers['Authorization'] = 'Bearer $token';
+      return r;
+    }
+    throw Exception('Неизвестный тип запроса: ${original.runtimeType}');
   }
 }
 
-/// Сервис аутентификации
 class AuthService {
   static const String _baseUrl = "https://dormmate-back.onrender.com/api/v1/";
 
@@ -125,20 +121,39 @@ class AuthService {
 
   /// Очистить SharedPreferences (выход)
   static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    if (kIsWeb) {
+      html.window.localStorage.remove('flutter.access_token');
+      html.window.localStorage.remove('flutter.refresh_token');
+      html.window.localStorage.remove('flutter.user_type');
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+    }
   }
 
   /// Получить access_token
   static Future<String?> getAccessToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
+    if (kIsWeb) {
+      return html
+          .window.localStorage['flutter.access_token']; // Получаем токен из localStorage для веба
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('access_token');
+    }
   }
 
   /// Загрузить данные студента
   static Future<Map<String, dynamic>> getStudentData() async {
-    final client = RefreshHttpClient();
-    final response = await client.get(Uri.parse("${_baseUrl}studentdetail/"));
+    final token = await getAccessToken(); // Получаем токен
+    if (token == null || token.isEmpty) {
+      throw Exception("Токен не найден");
+    }
+
+    final client = http.Client();
+    final response = await client.get(
+      Uri.parse("${_baseUrl}studentdetail/"),
+      headers: {"Authorization": "Bearer $token"},
+    );
     if (response.statusCode == 200) {
       return jsonDecode(utf8.decode(response.bodyBytes));
     } else {
@@ -148,9 +163,10 @@ class AuthService {
 
   /// Получаем user_type напрямую через /usertype/
   static Future<String?> fetchAndSaveUserType() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-    if (token == null) return null;
+    final token = await getAccessToken();
+    if (token == null || token.isEmpty) {
+      return null;
+    }
 
     final url = Uri.parse("${_baseUrl}usertype/");
     final response = await http.get(
@@ -162,7 +178,13 @@ class AuthService {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
       final userType = data["user_type"] as String?;
       if (userType != null) {
-        await prefs.setString('user_type', userType);
+        if (kIsWeb) {
+          html.window.localStorage['flutter.user_type'] =
+              userType; // Сохраняем в localStorage для веба
+        } else {
+          final prefs = await SharedPreferences.getInstance();
+          prefs.setString('user_type', userType);
+        }
         return userType;
       }
     } else {
@@ -171,18 +193,117 @@ class AuthService {
     return null;
   }
 
-  /// Читаем user_type из локального SharedPreferences
+  /// Читаем user_type из локального хранилища
   static Future<String?> getUserType() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_type');
+    if (kIsWeb) {
+      return html.window.localStorage['flutter.user_type']; // Получаем из localStorage для веба
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('user_type');
+    }
   }
 }
+
+// /// Сервис аутентификации
+// class AuthService {
+//   static const String _baseUrl = "https://dormmate-back.onrender.com/api/v1/";
+
+//   static Future<bool> login(String identifier, String password) async {
+//     final body = RegExp(r'^\d+$').hasMatch(identifier)
+//         ? {"phone_number": identifier, "password": password}
+//         : {"s": identifier, "password": password};
+
+//     final response = await http.post(
+//       Uri.parse("${_baseUrl}token/"),
+//       headers: {"Content-Type": "application/json"},
+//       body: jsonEncode(body),
+//     );
+
+//     if (response.statusCode == 200) {
+//       final data = jsonDecode(response.body);
+
+//       // ✅ Сохраняем токены и user_type в зависимости от платформы
+//       if (kIsWeb) {
+//         html.window.localStorage['flutter.access_token'] = data["access"];
+//         html.window.localStorage['flutter.refresh_token'] = data["refresh"];
+//         if (data.containsKey("user_type")) {
+//           html.window.localStorage['flutter.user_type'] = data["user_type"];
+//         }
+//       } else {
+//         final prefs = await SharedPreferences.getInstance();
+//         prefs.setString('access_token', data["access"]);
+//         prefs.setString('refresh_token', data["refresh"]);
+//         if (data.containsKey("user_type")) {
+//           prefs.setString('user_type', data["user_type"]);
+//         }
+//       }
+
+//       return true;
+//     }
+
+//     return false;
+//   }
+
+//   /// Очистить SharedPreferences (выход)
+//   static Future<void> logout() async {
+//     final prefs = await SharedPreferences.getInstance();
+//     await prefs.clear();
+//   }
+
+//   /// Получить access_token
+//   static Future<String?> getAccessToken() async {
+//     final prefs = await SharedPreferences.getInstance();
+//     return prefs.getString('access_token');
+//   }
+
+//   /// Загрузить данные студента
+//   static Future<Map<String, dynamic>> getStudentData() async {
+//     final client = RefreshHttpClient();
+//     final response = await client.get(Uri.parse("${_baseUrl}studentdetail/"));
+//     if (response.statusCode == 200) {
+//       return jsonDecode(utf8.decode(response.bodyBytes));
+//     } else {
+//       throw Exception("Ошибка загрузки данных: ${response.statusCode}");
+//     }
+//   }
+
+//   /// Получаем user_type напрямую через /usertype/
+//   static Future<String?> fetchAndSaveUserType() async {
+//     final prefs = await SharedPreferences.getInstance();
+//     final token = prefs.getString('access_token');
+//     if (token == null) return null;
+
+//     final url = Uri.parse("${_baseUrl}usertype/");
+//     final response = await http.get(
+//       url,
+//       headers: {"Authorization": "Bearer $token"},
+//     );
+
+//     if (response.statusCode == 200) {
+//       final data = jsonDecode(utf8.decode(response.bodyBytes));
+//       final userType = data["user_type"] as String?;
+//       if (userType != null) {
+//         await prefs.setString('user_type', userType);
+//         return userType;
+//       }
+//     } else {
+//       print("Ошибка usertype: ${response.statusCode}, body=${response.body}");
+//     }
+//     return null;
+//   }
+
+//   /// Читаем user_type из локального SharedPreferences
+//   static Future<String?> getUserType() async {
+//     final prefs = await SharedPreferences.getInstance();
+//     return prefs.getString('user_type');
+//   }
+// }
 
 class GoChatService {
   static final Dio _dio = Dio(BaseOptions(
     baseUrl: goBaseUrl,
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
+    connectTimeout: const Duration(seconds: 60),
+    receiveTimeout: const Duration(seconds: 60),
   ))
     ..interceptors.add(
       InterceptorsWrapper(
@@ -212,13 +333,20 @@ class GoChatService {
       ),
     );
 
-  static Future<List<dynamic>> fetchMessages(int chatId) async {
+  static Future<List<dynamic>> fetchMessages(String chatId) async {
     final resp = await _dio.get('chats/$chatId/messages/');
     return resp.data;
   }
 
-  static Future<void> sendMessage(int chatId, String text) async {
-    await _dio.post('chats/$chatId/send/', data: {'text': text});
+  static Future<void> sendMessage(String chatId, String text,
+      {String senderType = 'student'}) async {
+    await _dio.post(
+      'chats/$chatId/messages', // ← правильный URL
+      data: {
+        'content': text,
+        'sender_type': senderType,
+      },
+    );
   }
 
   static Future<int> createChat() async {
@@ -230,10 +358,32 @@ class GoChatService {
     final resp = await _dio.get('chats');
     return resp.data;
   }
+
+  /// POST /chats/init_all
+  static Future<void> initAllChats() async {
+    await _dio.post('chats/init_all');
+  }
+
+  /// DELETE /chats/cleanup  → вернём JSON { deleted_chats: 3 }
+  static Future<dynamic> cleanupChats() async {
+    final resp = await _dio.delete('chats/cleanup');
+    return resp.data;
+  }
 }
 
 /// Сервис для заявок
 class ApplicationService {
+  static Future<String?> getAccessToken() async {
+    String? token;
+    if (kIsWeb) {
+      token = html.window.localStorage['flutter.access_token']; // Для веба
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      token = prefs.getString('access_token'); // Для мобильных устройств
+    }
+    return token;
+  }
+
   /// Создание заявки POST /create_application/
   static Future<void> createApplication(String dormitoryCost, Map<String, XFile?> documents) async {
     final prefs = await SharedPreferences.getInstance();
@@ -286,56 +436,144 @@ class ApplicationService {
     }
   }
 
-  /// Загрузка скриншота оплаты POST /upload_payment_screenshot/
+  /// Получаем токен доступа
+  static Future<String?> _getAccessToken() async {
+    if (html.window.localStorage.containsKey('flutter.access_token')) {
+      return html
+          .window.localStorage['flutter.access_token']; // Получаем токен из localStorage для веба
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('access_token');
+    }
+  }
+
+  /// Загрузка PDF для мобильных устройств
   static Future<void> uploadPaymentScreenshot(File screenshot) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-    if (token == null) throw Exception("Отсутствует токен доступа");
+    try {
+      final token = await _getAccessToken();
+      if (token == null || token.isEmpty) {
+        throw Exception("Токен не найден");
+      }
 
-    final request = http.MultipartRequest(
-      "POST",
-      Uri.parse("https://dormmate-back.onrender.com//api/v1/upload_payment_screenshot/"),
-    )
-      ..headers["Authorization"] = "Bearer $token"
-      ..files.add(
-        http.MultipartFile.fromBytes(
-          'upload_payment_screenshot',
-          screenshot.readAsBytesSync(),
-          filename: screenshot.path.split('/').last,
-        ),
-      );
+      final request = http.MultipartRequest(
+          "POST", Uri.parse("https://dormmate-back.onrender.com/api/v1/upload_payment_screenshot/"))
+        ..headers["Authorization"] = "Bearer $token"
+        ..files.add(
+          http.MultipartFile.fromBytes(
+            'payment_screenshot', // Мы используем 'file' как имя параметра
+            screenshot.readAsBytesSync(),
+            filename: screenshot.path.split('/').last, // Сохраняем исходное имя файла
+            contentType: MediaType('application', 'pdf'), // Указываем тип контента PDF
+          ),
+        );
 
-    final streamed = await request.send();
-    final response = await http.Response.fromStream(streamed);
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception("Ошибка загрузки скриншота: ${response.statusCode}");
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception("Ошибка загрузки PDF: ${response.statusCode}");
+      }
+
+      print("PDF успешно загружен.");
+    } catch (e) {
+      print("Ошибка при загрузке PDF: $e");
+      throw Exception("Ошибка при загрузке PDF: $e");
     }
   }
 
+  /// Загрузка PDF для веба
   static Future<void> uploadPaymentScreenshotWeb(Uint8List bytes, String filename) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-    if (token == null) throw Exception("Отсутствует токен доступа");
+    try {
+      final token = await _getAccessToken();
+      if (token == null || token.isEmpty) {
+        throw Exception("Отсутствует токен доступа");
+      }
 
-    final request = http.MultipartRequest(
-      "POST",
-      Uri.parse("https://dormmate-back.onrender.com//api/v1/upload_payment_screenshot/"),
-    )
-      ..headers["Authorization"] = "Bearer $token"
-      ..files.add(
-        http.MultipartFile.fromBytes(
-          'upload_payment_screenshot',
-          bytes,
-          filename: filename,
-        ),
-      );
+      final request = http.MultipartRequest(
+          "POST", Uri.parse("https://dormmate-back.onrender.com/api/v1/upload_payment_screenshot/"))
+        ..headers["Authorization"] = "Bearer $token"
+        ..files.add(
+          http.MultipartFile.fromBytes(
+            'payment_screenshot', // Мы используем 'file' как имя параметра
+            bytes,
+            filename: filename, // Сохраняем исходное имя файла
+            contentType: MediaType('application', 'pdf'), // Указываем тип контента PDF
+          ),
+        );
 
-    final streamed = await request.send();
-    final response = await http.Response.fromStream(streamed);
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception("Ошибка загрузки скриншота: ${response.statusCode}");
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception("Ошибка загрузки PDF: ${response.statusCode}");
+      }
+
+      print("PDF успешно загружен.");
+    } catch (e) {
+      print("Ошибка при загрузке PDF: $e");
+      throw Exception("Ошибка при загрузке PDF: $e");
     }
   }
+  // static Future<void> uploadPaymentScreenshot(File screenshot) async {
+  //   final token = await getAccessToken(); // Получаем токен
+  //   if (token == null || token.isEmpty) {
+  //     throw Exception("Токен не найден");
+  //   }
+
+  //   final request = http.MultipartRequest(
+  //       "POST", Uri.parse("https://dormmate-back.onrender.com/api/v1/upload_payment_screenshot/"))
+  //     ..headers["Authorization"] = "Bearer $token"
+  //     ..files.add(
+  //       http.MultipartFile.fromBytes(
+  //         'upload_payment_screenshot',
+  //         screenshot.readAsBytesSync(),
+  //         filename: screenshot.path.split('/').last,
+  //       ),
+  //     );
+
+  //   final streamed = await request.send();
+  //   final response = await http.Response.fromStream(streamed);
+
+  //   if (response.statusCode != 200 && response.statusCode != 201) {
+  //     throw Exception("Ошибка загрузки скриншота: ${response.statusCode}");
+  //   }
+
+  //   print("Скриншот успешно загружен.");
+  // }
+
+  // // Upload payment screenshot for web (Uint8List)
+  // static Future<void> uploadPaymentScreenshotWeb(Uint8List bytes, String filename) async {
+  //   try {
+  //     // Получаем токен
+  //     final token = await getAccessToken();
+  //     if (token == null || token.isEmpty) {
+  //       throw Exception("Отсутствует токен доступа");
+  //     }
+
+  //     final request = http.MultipartRequest(
+  //         "POST", Uri.parse("https://dormmate-back.onrender.com/api/v1/upload_payment_screenshot/"))
+  //       ..headers["Authorization"] = "Bearer $token"
+  //       ..files.add(
+  //         http.MultipartFile.fromBytes(
+  //           '',
+  //           bytes,
+  //           filename: filename,
+  //         ),
+  //       );
+
+  //     final streamed = await request.send();
+  //     final response = await http.Response.fromStream(streamed);
+
+  //     if (response.statusCode != 200 && response.statusCode != 201) {
+  //       throw Exception("Ошибка загрузки скриншота: ${response.statusCode}");
+  //     }
+
+  //     print("Скриншот успешно загружен.");
+  //   } catch (e) {
+  //     print("Ошибка при загрузке скриншота: $e");
+  //     throw Exception("Ошибка при загрузке скриншота: $e");
+  //   }
+  // }
 
   /// Получаем статус заявки GET /application_status/
   static Future<String> fetchApplicationStatus() async {

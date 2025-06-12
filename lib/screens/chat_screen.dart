@@ -9,12 +9,13 @@ class StudentChatScreen extends StatefulWidget {
   _StudentChatScreenState createState() => _StudentChatScreenState();
 }
 
-class _StudentChatScreenState extends State<StudentChatScreen> {
+class _StudentChatScreenState extends State<StudentChatScreen> with TickerProviderStateMixin {
   int? chatId;
   List<Map<String, dynamic>> messages = [];
   TextEditingController inputController = TextEditingController();
   bool chatActive = true;
   Timer? fetchTimer;
+  final _listKey = GlobalKey<AnimatedListState>();
 
   @override
   void initState() {
@@ -151,19 +152,23 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
     super.dispose();
   }
 
-  Widget _chatBubble(String text, bool isUser, String time, ThemeData theme) {
+  Widget _chatBubble(String text, bool isUser, String time, ThemeData theme,
+      {Animation<double>? animation}) {
     final isDark = theme.brightness == Brightness.dark;
-    final bubbleColor = isUser
-        ? (isDark ? const Color(0xFF29563B) : const Color(0xFFD9F0E4))
-        : (isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade200);
-    final userTextColor = isUser
-        ? (isDark ? const Color(0xFF92EBB9) : const Color(0xFF2C5F2D))
-        : (isDark ? Colors.grey[200]! : Colors.black87);
-    final timeColor = isUser
-        ? (isDark ? Colors.grey[400]! : const Color(0xFF2C5F2D).withOpacity(0.7))
-        : (isDark ? Colors.grey[400]! : Colors.black54);
+    final userColor = isDark ? Color(0xFF2E3B5B) : Color(0xFFDCE3F6);
+    final adminColor = isDark ? Color(0xFF232338) : Colors.white;
+    final borderUser = isDark ? Color(0xFF395380) : Color(0xFFB1BCDD);
+    final borderAdmin = isDark ? Color(0xFF22243A) : Color(0xFFE1E4F0);
 
-    return Align(
+    final bubbleColor = isUser ? userColor : adminColor;
+    final borderColor = isUser ? borderUser : borderAdmin;
+
+    final userTextColor = isUser
+        ? (isDark ? Colors.white : Color(0xFF2E3B5B))
+        : (isDark ? Colors.white : Colors.black87);
+    final timeColor = isUser ? Colors.grey[400]! : Colors.grey[500]!;
+
+    Widget child = Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
@@ -174,9 +179,17 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(isUser ? 18 : 4),
-            bottomRight: Radius.circular(isUser ? 4 : 18),
+            bottomLeft: Radius.circular(isUser ? 18 : 5),
+            bottomRight: Radius.circular(isUser ? 5 : 18),
           ),
+          border: Border.all(color: borderColor.withOpacity(0.4), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: (isUser ? borderUser : borderAdmin).withOpacity(0.12),
+              blurRadius: 12,
+              offset: Offset(0, 5),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -186,14 +199,14 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
               style: GoogleFonts.montserrat(
                 color: userTextColor,
                 fontSize: 15,
-                fontWeight: FontWeight.w400,
+                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               time,
               style: GoogleFonts.montserrat(
-                fontSize: 10,
+                fontSize: 11,
                 color: timeColor,
               ),
             ),
@@ -201,6 +214,13 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
         ),
       ),
     );
+
+    // Оборачиваем в FadeTransition для плавного появления (если передали animation)
+    if (animation != null) {
+      child = FadeTransition(opacity: animation, child: child);
+    }
+
+    return child;
   }
 
   @override
@@ -209,13 +229,12 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final bgColor = theme.scaffoldBackgroundColor;
-    final appBarBg = theme.appBarTheme.backgroundColor ??
-        (isDark ? const Color.fromARGB(255, 74, 73, 73) : Colors.white);
-    final appBarTextColor = isDark ? Colors.white : const Color.fromARGB(255, 85, 84, 84);
-    final inputBg = isDark ? const Color(0xFF232323) : Colors.white;
+    final bgColor = isDark ? Color(0xFF181825) : Color(0xFFF7F7FA);
+    final appBarBg = isDark ? Color(0xFF232338) : Colors.white;
+    final appBarTextColor = isDark ? Colors.white : Color(0xFF232338);
+    final inputBg = isDark ? Color(0xFF22232A) : Colors.white;
     final inputTextColor = isDark ? Colors.white : Colors.black87;
-    final sendIconBg = isDark ? const Color(0xFFD50032) : const Color(0xFF3AAA35);
+    final sendIconBg = Color(0xFFD50032);
     final sendIconColor = Colors.white;
 
     return Scaffold(
@@ -248,7 +267,7 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
               style: GoogleFonts.montserrat(
                 color: appBarTextColor,
                 fontSize: 16,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -257,21 +276,38 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
       ),
       body: Column(
         children: [
+          // Список сообщений с анимацией появления
           Expanded(
             child: ListView.builder(
               reverse: false,
+              padding: const EdgeInsets.only(top: 12, bottom: 2),
               itemCount: messages.length,
               itemBuilder: (context, index) {
                 final msg = messages[index];
                 final isUser = msg['type'] == 'student';
-                return _chatBubble(msg['text'], isUser, msg['timestamp'], theme);
+                return _chatBubble(
+                  msg['text'],
+                  isUser,
+                  msg['timestamp'],
+                  theme,
+                  // можно добавить анимацию вручную через AnimatedList, если нужно
+                );
               },
             ),
           ),
           if (chatActive)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              color: inputBg,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              decoration: BoxDecoration(
+                color: inputBg,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.07),
+                    blurRadius: 8,
+                    offset: Offset(0, -2),
+                  ),
+                ],
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -289,10 +325,22 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
                   ),
                   GestureDetector(
                     onTap: _handleSendMessage,
-                    child: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: sendIconBg,
-                      child: Icon(Icons.arrow_upward, color: sendIconColor, size: 18),
+                    child: AnimatedContainer(
+                      duration: Duration(milliseconds: 180),
+                      curve: Curves.easeIn,
+                      decoration: BoxDecoration(
+                        color: sendIconBg,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xFFD50032).withOpacity(0.18),
+                            blurRadius: 7,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(10),
+                      child: Icon(Icons.arrow_upward, color: sendIconColor, size: 20),
                     ),
                   ),
                 ],
@@ -300,26 +348,24 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
             ),
           if (chatActive)
             Padding(
-              padding: const EdgeInsets.only(bottom: 18, top: 14),
+              padding: const EdgeInsets.only(bottom: 15, top: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton.icon(
                     onPressed: _requestOperator,
-                    icon: Icon(Icons.support_agent,
-                        color: isDark ? Color(0xFFD50032) : Color(0xFF3AAA35)),
+                    icon: Icon(Icons.support_agent, color: Color(0xFFD50032)),
                     label: Text(
                       t.operator,
                       style: GoogleFonts.montserrat(
-                          color: isDark ? Color(0xFFD50032) : Color(0xFF3AAA35)),
+                          color: Color(0xFFD50032), fontWeight: FontWeight.w600),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: inputBg,
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
                       elevation: 0,
-                      side: BorderSide(
-                          color: isDark ? Color(0xFFD50032) : Color(0xFF3AAA35), width: 1.2),
+                      side: BorderSide(color: Color(0xFFD50032), width: 1.2),
                     ),
                   ),
                   ElevatedButton.icon(
@@ -327,12 +373,13 @@ class _StudentChatScreenState extends State<StudentChatScreen> {
                     icon: Icon(Icons.close, color: Color(0xFFC72727)),
                     label: Text(
                       t.end_chat,
-                      style: GoogleFonts.montserrat(color: Color(0xFFC72727)),
+                      style: GoogleFonts.montserrat(
+                          color: Color(0xFFC72727), fontWeight: FontWeight.w600),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: inputBg,
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
                       elevation: 0,
                       side: const BorderSide(color: Color(0xFFC72727), width: 1.2),
                     ),

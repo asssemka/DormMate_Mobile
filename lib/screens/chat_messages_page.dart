@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../models/chat.dart';
 import '../providers/chat_provider.dart';
-import '../services/api.dart'; // <-- добавь импорт
+import '../providers/student_provider.dart';
+import '../gen_l10n/app_localizations.dart';
 
 class ChatMessagesPage extends StatefulWidget {
   final Chat chat;
@@ -13,112 +15,115 @@ class ChatMessagesPage extends StatefulWidget {
 }
 
 class _ChatMessagesPageState extends State<ChatMessagesPage> {
-  final _controller = TextEditingController();
-  String? _accessToken;
+  final _input = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    context.read<ChatProvider>().selectChat(widget.chat);
+    context.read<ChatProvider>().connectWebSocket();
+  }
 
-    // Проверим токен сразу при открытии страницы чата
-    AuthService.getAccessToken().then((token) {
-      setState(() {
-        _accessToken = token;
-      });
-      debugPrint("ACCESS TOKEN IN CHAT PAGE: $token");
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ChatProvider>().selectChat(widget.chat);
-    });
+  @override
+  void dispose() {
+    context.read<ChatProvider>().disconnectWebSocket();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final chatProv = context.watch<ChatProvider>();
+    final prov = context.watch<ChatProvider>();
+    final stud = context.watch<StudentProvider>();
+    final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context)!;
+
+    final myId = stud.userId?.toString() ?? '';
+    final title = prov.titleFor(widget.chat, stud);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.chat.name ?? "Чат"),
-        // Можешь для теста временно показать токен в appbar
-        bottom: _accessToken != null
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(36),
-                child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: Text(
-                    'Token: ${_accessToken}',
-                    style: const TextStyle(fontSize: 12, color: Colors.red),
-                  ),
-                ),
-              )
-            : null,
-      ),
+      appBar: AppBar(title: Text(title)),
       body: Column(
         children: [
-          // Можно вывести токен и тут (для наглядности)
-          if (_accessToken != null)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'Access Token: $_accessToken',
-                style: const TextStyle(fontSize: 12, color: Colors.red),
-              ),
-            ),
           Expanded(
-            child: ListView.builder(
-              itemCount: chatProv.messages.length,
-              itemBuilder: (ctx, i) {
-                final msg = chatProv.messages[i];
-                final isMe = msg.senderType == 'student';
-                return Align(
-                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isMe ? Colors.blue.shade100 : Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(msg.content),
-                        const SizedBox(height: 4),
-                        Text(
-                          "${msg.createdAt.hour.toString().padLeft(2, '0')}:${msg.createdAt.minute.toString().padLeft(2, '0')}",
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+            child: prov.messages.isEmpty
+                ? Center(child: Text(localizations.noMessages))
+                : ListView.builder(
+                    reverse: true,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: prov.messages.length,
+                    itemBuilder: (_, i) {
+                      final m = prov.messages[prov.messages.length - 1 - i];
+                      final isMe = m.senderType == 'student' && m.senderId == myId;
+
+                      final senderName = isMe
+                          ? '${stud.firstName ?? ''} ${stud.lastName ?? ''}'.trim()
+                          : (m.senderType == 'student'
+                              ? '${m.senderFirstName ?? ''} ${m.senderLastName ?? ''}'.trim()
+                              : localizations.admin);
+                      final formattedTime = DateFormat('HH:mm').format(m.createdAt);
+
+                      final messageColor = theme.brightness == Brightness.dark
+                          ? (isMe ? Colors.green : Colors.grey.shade800)
+                          : (isMe ? Colors.blue.shade300 : Colors.grey.shade300);
+
+                      return Align(
+                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Column(
+                          crossAxisAlignment:
+                              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                              child: Text(
+                                '$senderName • $formattedTime',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: messageColor,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: Text(
+                                m.content,
+                                style: TextStyle(
+                                  color: isMe ? Colors.white : theme.textTheme.bodyLarge!.color,
+                                  fontFamily: 'Montserrat',
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
           SafeArea(
+            top: false,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
               child: Row(
                 children: [
                   Expanded(
                     child: TextField(
-                      controller: _controller,
-                      decoration: const InputDecoration(
-                        hintText: 'Введите сообщение...',
-                        border: OutlineInputBorder(),
-                      ),
+                      controller: _input,
+                      decoration: InputDecoration(hintText: localizations.enterMessage),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: () async {
-                      final text = _controller.text.trim();
+                    icon: Icon(Icons.send),
+                    onPressed: () {
+                      final text = _input.text.trim();
                       if (text.isEmpty) return;
-                      await context.read<ChatProvider>().sendMessage(text);
-                      _controller.clear();
+                      prov.sendMessage(text);
+                      _input.clear();
                     },
-                  ),
+                  )
                 ],
               ),
             ),

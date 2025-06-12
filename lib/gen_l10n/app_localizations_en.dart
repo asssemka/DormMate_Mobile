@@ -154,7 +154,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your application is approved. Please pay and attach a screenshot here.';
 
   @override
-  String get attach_payment_screenshot => 'Attach Payment Screenshot';
+  String get attach_payment_screenshot => 'Attach payment screenshot';
 
   @override
   String get upload_success => 'Screenshot uploaded successfully.';
@@ -172,7 +172,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get select_language => 'Select Language';
 
   @override
-  String get status_no_application => 'You have not applied yet.';
+  String get status_no_application =>
+      'No application found. Please submit an application.';
 
   @override
   String get go_to_application => 'Go to Application';
@@ -347,4 +348,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get faq_a7 => 'Warning, fine, or eviction depending on the severity.';
+
+  @override
+  String get status_test_not_passed => 'You haven\'t passed the test yet.';
+
+  @override
+  String get take_test => 'Take the Test';
+
+  @override
+  String get status_pending => 'Your application is under review.';
+
+  @override
+  String get status_rejected => 'Your application was rejected.';
+
+  @override
+  String get status_awaiting_payment =>
+      'Your application is approved. Please attach your payment screenshot.';
+
+  @override
+  String get status_awaiting_order => 'Payment received. Wait for your order.';
+
+  @override
+  String get status_order => 'Order issued';
+
+  @override
+  String get unknown_status => 'Unknown status';
+
+  @override
+  String get noMessages => 'No messages';
+
+  @override
+  String get admin => 'Administrator';
+
+  @override
+  String get enterMessage => 'Enter a message...';
+
+  @override
+  String get birth_date => 'Birth date';
 }

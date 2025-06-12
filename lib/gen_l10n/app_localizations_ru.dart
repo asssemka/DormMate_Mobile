@@ -154,7 +154,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Ваша заявка одобрена, внесите оплату и прикрепите сюда чек.';
 
   @override
-  String get attach_payment_screenshot => 'Прикрепить скрин оплаты';
+  String get attach_payment_screenshot => 'Прикрепите скриншот платежа';
 
   @override
   String get upload_success => 'Скриншот успешно загружен.';
@@ -172,7 +172,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get select_language => 'Выберите язык';
 
   @override
-  String get status_no_application => 'Вы ещё не подали заявку.';
+  String get status_no_application =>
+      'Заявка не найдена. Пожалуйста, отправьте заявку.';
 
   @override
   String get go_to_application => 'Перейти к заявке';
@@ -350,4 +351,41 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get faq_a7 =>
       'Предупреждение, штраф или выселение в зависимости от тяжести';
+
+  @override
+  String get status_test_not_passed => 'Вы еще не прошли тест.';
+
+  @override
+  String get take_test => 'Пройти тест';
+
+  @override
+  String get status_pending => 'Ваша заявка находится на рассмотрении.';
+
+  @override
+  String get status_rejected => 'Ваша заявка отклонена.';
+
+  @override
+  String get status_awaiting_payment =>
+      'Ваша заявка одобрена. Пожалуйста, приложите скриншот платежа.';
+
+  @override
+  String get status_awaiting_order => 'Платеж получен. Ожидайте ваш заказ.';
+
+  @override
+  String get status_order => 'Заказ оформлен';
+
+  @override
+  String get unknown_status => 'Неизвестный статус';
+
+  @override
+  String get noMessages => 'Нет сообщений';
+
+  @override
+  String get admin => 'Администратор';
+
+  @override
+  String get enterMessage => 'Введите сообщение…';
+
+  @override
+  String get birth_date => 'Дата рождения: ';
 }

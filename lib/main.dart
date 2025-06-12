@@ -18,14 +18,16 @@ import 'screens/dorm_detail_page.dart';
 import 'screens/admin/admin_main_screen.dart';
 import 'screens/edit_application_screen.dart';
 import 'providers/chat_provider.dart';
-import 'screens/student_chat_screen.dart';
+import 'screens/dorm_group_chats_screen.dart';
+import 'providers/student_provider.dart'; // ← добавь в блок import-ов
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppSettings()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()), // <-- добавили провайдер чата
+        ChangeNotifierProvider(create: (_) => StudentProvider()), // ⭐ новый
+        ChangeNotifierProvider(create: (_) => ChatProvider()), // был
       ],
       child: const DormMateApp(),
     ),
@@ -90,7 +92,7 @@ class DormMateApp extends StatelessWidget {
                     ),
                 '/login': (context) => const LoginScreen(),
                 '/chat': (context) => StudentChatScreen(),
-                '/dorm_chats': (context) => DormChatsPage(),
+                '/dorm_chats': (context) => DormGroupChatsScreen(),
                 '/apply': (context) => ApplyScreen(),
                 '/edit-application': (context) => EditApplicationScreen(),
                 '/testpage': (context) => TestPage(),

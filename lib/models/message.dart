@@ -1,26 +1,33 @@
+// lib/models/message.dart
 class Message {
   final int id;
-  final String chatID;
-  final String senderID;
-  final String senderType;
+  final String chatId; // dorm_1, floor_1_3 …
+  final String senderId; // строкой, как приходит из Go
+  final String senderType; // student | admin
   final String content;
   final DateTime createdAt;
+  final String senderFirstName;
+  final String senderLastName;
 
   Message({
     required this.id,
-    required this.chatID,
-    required this.senderID,
+    required this.chatId,
+    required this.senderId,
     required this.senderType,
     required this.content,
     required this.createdAt,
+    required this.senderFirstName,
+    required this.senderLastName,
   });
 
-  factory Message.fromJson(Map<String, dynamic> json) => Message(
-        id: json['ID'] ?? json['id'],
-        chatID: json['ChatID'],
-        senderID: json['SenderID'],
-        senderType: json['SenderType'],
-        content: json['Content'],
-        createdAt: DateTime.parse(json['CreatedAt']),
+  factory Message.fromJson(Map<String, dynamic> j) => Message(
+        id: j['ID'] ?? j['id'] ?? 0,
+        chatId: (j['ChatID'] ?? j['chatID']).toString(),
+        senderId: (j['SenderID'] ?? j['senderID']).toString(),
+        senderType: j['SenderType'] ?? j['senderType'] ?? 'student',
+        content: j['Content'] ?? j['content'] ?? '',
+        createdAt: DateTime.parse(j['CreatedAt'] ?? j['createdAt']),
+        senderFirstName: j['senderFirstName'] ?? '',
+        senderLastName: j['senderLastName'] ?? '',
       );
 }
